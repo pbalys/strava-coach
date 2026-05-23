@@ -1,34 +1,21 @@
-const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
-const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
-const STRAVA_REFRESH_TOKEN = process.env.STRAVA_REFRESH_TOKEN;
-
-async function getAccessToken() {
-  const res = await fetch('https://www.strava.com/oauth/token', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      client_id: STRAVA_CLIENT_ID,
-      client_secret: STRAVA_CLIENT_SECRET,
-      refresh_token: STRAVA_REFRESH_TOKEN,
-      grant_type: 'refresh_token'
-    })
-  });
-  const data = await res.json();
-  if (!data.access_token) throw new Error('Token error: ' + JSON.stringify(data));
-  return data.access_token;
-}
-
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   try {
-    const page = req.query.page || 1;
-    const token = await getAccessToken();
-    const r = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=20&page=${page}`, {
-      headers: {'Authorization': 'Bearer ' + token}
+    const tokenRes = await fetch('https://www.strava.com/oauth/token', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        client_id: process.env.STRAVA_CLIENT_ID,
+        client_secret: process.env.STRAVA_CLIENT_SECRET,
+        refresh_token: process.env.STRAVA_REFRESH_TOKEN,
+        grant_type: 'refresh_token'
+      })
+    });
+    const { access_token } = await tokenRes.json();
+    const r = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=20&page=${req.query.page||1}`, {
+      headers: {'Authorization': 'Bearer ' + access_token}
     });
     const data = await r.json();
-    const activities = Array.isArray(data) ? data : [];
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json(activities);
+    res.json(Array.isArray(data) ? data : []);
   } catch(e) {
     res.status(500).json({error: e.message});
   }
