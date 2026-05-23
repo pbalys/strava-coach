@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strava Coach – Piotr</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --orange:#FC4C02; --dark:#0f0f0f; --mid:#1a1a1a; --card:#1e1e1e;
+    --border:#2a2a2a; --text:#f0f0f0; --muted:#777; --green:#00d4aa;
+    --yellow:#f5c518; --red:#ff4444; --blue:#4da6ff;
+  }
+  body { background:var(--dark); color:var(--text); font-family:'Barlow',sans-serif; min-height:100vh; }
+  header { background:var(--mid); border-bottom:2px solid var(--orange); padding:14px 24px; display:flex; align-items:center; gap:12px; }
+  .logo { width:32px;height:32px;background:var(--orange);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;color:#fff; }
+  header h1 { font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-transform:uppercase; }
+  .athlete { margin-left:auto;font-size:12px;color:var(--muted); }
+  .status-bar { background:var(--mid);border-bottom:1px solid var(--border);padding:7px 24px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px; }
+  .dot { width:7px;height:7px;border-radius:50%;background:var(--muted); }
+  .dot.ok{background:var(--green);} .dot.err{background:var(--red);} .dot.loading{background:var(--yellow);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .container { padding:20px 24px; max-width:1200px; margin:0 auto; }
+  .coach-panel { background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden; }
+  .coach-header { background:#1a1500;border-bottom:1px solid #3a2a00;padding:14px 20px;display:flex;align-items:center;gap:10px; }
+  .coach-icon { font-size:22px; }
+  .coach-title { font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--yellow); }
+  .coach-subtitle { font-size:11px;color:var(--muted);margin-left:auto; }
+  .coach-body { padding:20px; }
+  .coach-loading { display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px; }
+  .coach-spinner { width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0; }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .coach-text { font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap; }
+  .scores-row { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px; }
+  .score-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;position:relative;overflow:hidden; }
+  .score-card::before { content:'';position:absolute;top:0;left:0;right:0;height:3px; }
+  .score-card.green::before{background:var(--green);} .score-card.yellow::before{background:var(--yellow);} .score-card.red::before{background:var(--red);}
+  .score-label { font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;font-family:'Barlow Condensed',sans-serif;font-weight:600; }
+  .score-value { font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;line-height:1; }
+  .score-value.green{color:var(--green);} .score-value.yellow{color:var(--yellow);} .score-value.red{color:var(--red);}
+  .score-sub { font-size:10px;color:var(--muted);margin-top:4px; }
+  .stats-row { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px; }
+  .stat-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden; }
+  .stat-card::before { content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange); }
+  .stat-label { font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-weight:600; }
+  .stat-value { font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1; }
+  .stat-unit { font-size:12px;font-weight:400;color:var(--muted);margin-left:3px; }
+  .two-col { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px; }
+  .panel { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px; }
+  .panel-title { font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border); }
+  .zone-row { display:flex;align-items:center;gap:10px;margin-bottom:8px; }
+  .zone-name { font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;width:28px; }
+  .zone-bar-bg { flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden; }
+  .zone-bar { height:100%;border-radius:4px;transition:width .6s ease; }
+  .zone-pct { font-size:11px;color:var(--muted);width:36px;text-align:right; }
+  .zone-s1 .zone-bar{background:#4da6ff;} .zone-s1 .zone-name{color:#4da6ff;}
+  .zone-s2 .zone-bar{background:var(--green);} .zone-s2 .zone-name{color:var(--green);}
+  .zone-s3 .zone-bar{background:#ffa500;} .zone-s3 .zone-name{color:#ffa500;}
+  .zone-s4 .zone-bar{background:#ff6666;} .zone-s4 .zone-name{color:#ff6666;}
+  .zone-s5 .zone-bar{background:var(--red);} .zone-s5 .zone-name{color:var(--red);}
+  .week-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:6px; }
+  .day-cell { background:var(--mid);border:1px solid var(--border);border-radius:6px;padding:8px 4px;text-align:center; }
+  .day-name { font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;font-family:'Barlow Condensed',sans-serif; }
+  .day-icon { font-size:17px;margin-bottom:4px; }
+  .day-label { font-size:9px;color:var(--muted); }
+  .day-cell.done{border-color:var(--green);background:#0a1f0a;}
+  .day-cell.planned{border-color:var(--orange);background:#1f0a00;}
+  .day-cell.missed{border-color:var(--red);background:#1f0000;}
+  .day-cell.rest{opacity:.4;}
+  .section-title { font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border); }
+  .filter-row { display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap; }
+  .filter-btn { padding:5px 13px;background:var(--card);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .2s;font-family:'Barlow',sans-serif; }
+  .filter-btn.active,.filter-btn:hover{background:var(--orange);border-color:var(--orange);color:#fff;}
+  .activity-list { display:flex;flex-direction:column;gap:7px; }
+  .activity-card { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;display:grid;grid-template-columns:40px 1fr auto;gap:14px;align-items:center;transition:border-color .2s;cursor:pointer; }
+  .activity-card:hover{border-color:var(--orange);}
+  .act-icon{width:40px;height:40px;background:var(--mid);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px;}
+  .act-name{font-size:14px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .act-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);}
+  .act-stats{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:75px;}
+  .big-stat{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--orange);}
+  .big-label{font-size:9px;color:var(--muted);text-transform:uppercase;}
+  .zone-tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;font-family:'Barlow Condensed',sans-serif;}
+  .zt-s1{background:#1a3a4a;color:#4da6ff;} .zt-s2{background:#1a4a2a;color:var(--green);} .zt-s3{background:#4a3a1a;color:#ffa500;} .zt-s4{background:#4a1a1a;color:#f66;} .zt-s5{background:#5a0a0a;color:var(--red);}
+  .load-more{margin-top:14px;width:100%;padding:11px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .load-more:hover{border-color:var(--orange);color:var(--orange);}
+  .load-more:disabled{opacity:.4;cursor:not-allowed;}
+  .error-box{background:#2a1010;border:1px solid #5a2020;border-radius:8px;padding:14px;color:#f88;font-size:12px;line-height:1.7;}
+  .global-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted);gap:14px;}
+  .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">S</div>
+  <h1>Coach Dashboard</h1>
+  <span class="athlete" id="athleteName">Ładowanie...</span>
+</header>
+<div class="status-bar">
+  <div class="dot loading" id="dot"></div>
+  <span id="statusTxt">Łączenie ze Stravą...</span>
+</div>
+<div class="container">
+  <div id="main">
+    <div class="global-loading"><div class="spinner"></div><span>Pobieranie treningów i analiza AI...</span></div>
+  </div>
+</div>
+
+<script>
+const HR_MAX = 179;
+const PLAN = { 2:'intervals', 4:'easy', 6:'long' };
+let activities = [], filter = 'all', page = 1;
+
+function setStatus(state, txt) {
+  document.getElementById('dot').className = 'dot ' + state;
+  document.getElementById('statusTxt').textContent = txt;
+}
+
+async function apiFetch(path, body) {
+  const res = await fetch(path, {
+    method: body ? 'POST' : 'GET',
+    headers: {'Content-Type':'application/json'},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err || res.status);
+  }
+  return res.json();
+}
+
+function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h ${m}m`:`${m}min`;}
+function fmtD(m){return (m/1000).toFixed(1)+' km';}
+function fmtDate(s){return new Date(s).toLocaleDateString('pl-PL',{day:'numeric',month:'short'});}
+function ico(t){return {Ride:'🚴',VirtualRide:'🖥️',Run:'🏃',Walk:'🚶',Swim:'🏊',Hike:'🥾',WeightTraining:'🏋️',Workout:'💪'}[t]||'🏅';}
+function zone(hr){
+  if(!hr) return null;
+  const p=hr/HR_MAX*100;
+  if(p<60) return{l:'S1',c:'zt-s1',n:1};
+  if(p<70) return{l:'S2',c:'zt-s2',n:2};
+  if(p<80) return{l:'S3',c:'zt-s3',n:3};
+  if(p<90) return{l:'S4',c:'zt-s4',n:4};
+  return{l:'S5',c:'zt-s5',n:5};
+}
+
+function calcZones(acts) {
+  const counts={1:0,2:0,3:0,4:0,5:0}; let total=0;
+  acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide').forEach(a=>{
+    if(a.average_heartrate){const z=zone(a.average_heartrate);if(z){counts[z.n]+=a.moving_time;total+=a.moving_time;}}
+  });
+  return {counts,total};
+}
+
+function getWeekActs(acts){
+  const now=new Date(),mon=new Date(now);
+  mon.setDate(now.getDate()-((now.getDay()+6)%7));mon.setHours(0,0,0,0);
+  return acts.filter(a=>new Date(a.start_date_local)>=mon);
+}
+
+function scoreColor(s){return s>=75?'green':s>=50?'yellow':'red';}
+
+function renderCoach(a){
+  const oc=scoreColor(a.overall_score),pc=scoreColor(a.polarization_score),plc=scoreColor(a.plan_score),rc=scoreColor(a.recovery_score);
+  return `
+  <div class="scores-row">
+    <div class="score-card ${oc}"><div class="score-label">Ocena tygodnia</div><div class="score-value ${oc}">${a.overall_score}</div><div class="score-sub">/ 100</div></div>
+    <div class="score-card ${pc}"><div class="score-label">Polaryzacja</div><div class="score-value ${pc}">${a.polarization_score}</div><div class="score-sub">/ 100</div></div>
+    <div class="score-card ${plc}"><div class="score-label">Plan Wt/Czw/Sob</div><div class="score-value ${plc}">${a.plan_score}</div><div class="score-sub">/ 100</div></div>
+    <div class="score-card ${rc}"><div class="score-label">Regeneracja</div><div class="score-value ${rc}">${a.recovery_score}</div><div class="score-sub">/ 100</div></div>
+  </div>
+  <div class="coach-panel">
+    <div class="coach-header"><span class="coach-icon">🧠</span><span class="coach-title">Analiza trenera AI</span><span class="coach-subtitle">Aktualizacja przy każdym otwarciu</span></div>
+    <div class="coach-body"><div class="coach-text"><strong>📋 Podsumowanie</strong>
+${a.summary}
+
+<strong>🎯 Polaryzacja treningu</strong>
+${a.polarization_assessment}
+
+<strong>📅 Realizacja planu</strong>
+${a.plan_assessment}
+
+<strong>😴 Regeneracja i objętość</strong>
+${a.recovery_assessment}
+${a.key_issues&&a.key_issues.length?`
+<strong>⚠️ Problemy</strong>
+${a.key_issues.map(i=>'• '+i).join('\n')}`:''}
+
+<strong>✅ Zalecenia</strong>
+${a.recommendations.map((r,i)=>`${i+1}. ${r}`).join('\n')}
+
+<strong>🚴 Następny trening</strong>
+${a.next_workout}</div></div>
+  </div>`;
+}
+
+function renderZones(acts){
+  const {counts,total}=calcZones(acts);
+  if(!total) return '<p style="color:var(--muted);font-size:12px">Brak danych HR</p>';
+  return [1,2,3,4,5].map(n=>{
+    const pct=Math.round(counts[n]/total*100);
+    const ranges=['<107','107-125','125-143','143-161','>161'];
+    return `<div class="zone-row zone-s${n}">
+      <div class="zone-name">S${n}</div>
+      <div class="zone-bar-bg"><div class="zone-bar" style="width:${pct}%"></div></div>
+      <div class="zone-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function renderWeek(weekActs){
+  const names=['Nd','Pn','Wt','Śr','Cz','Pt','Sb'];
+  const todayDow=new Date().getDay();
+  const byDay={};
+  weekActs.forEach(a=>{const d=new Date(a.start_date_local).getDay();if(!byDay[d])byDay[d]=[];byDay[d].push(a);});
+  return names.map((name,dow)=>{
+    const isPast=dow<=todayDow,isPlanned=PLAN[dow],hasAct=byDay[dow]&&byDay[dow].length>0;
+    const isRide=byDay[dow]&&byDay[dow].some(a=>a.type==='Ride'||a.type==='VirtualRide');
+    let cls='rest',dayIcon='—',label='';
+    if(isPlanned){
+      if(hasAct&&isRide){cls='done';dayIcon=ico('Ride');label=isPlanned==='intervals'?'Interwały ✓':isPlanned==='easy'?'S2 ✓':'Długa ✓';}
+      else if(isPast){cls='missed';dayIcon='❌';label=isPlanned==='intervals'?'Interwały?':isPlanned==='easy'?'S2?':'Długa?';}
+      else{cls='planned';dayIcon='📋';label=isPlanned==='intervals'?'Interwały':isPlanned==='easy'?'S2':'Długa';}
+    } else if(hasAct){cls='done';dayIcon=ico(byDay[dow][0].type);label='Aktywność';}
+    return `<div class="day-cell ${cls}"><div class="day-name">${name}</div><div class="day-icon">${dayIcon}</div><div class="day-label">${label}</div></div>`;
+  }).join('');
+}
+
+function renderStats(acts){
+  const rides=acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide');
+  const dist=rides.reduce((s,a)=>s+a.distance,0),time=rides.reduce((s,a)=>s+a.moving_time,0),elev=rides.reduce((s,a)=>s+(a.total_elevation_gain||0),0);
+  const pws=rides.filter(a=>a.average_watts).map(a=>a.average_watts),pw=pws.length?Math.round(pws.reduce((a,b)=>a+b)/pws.length):null;
+  return `
+    <div class="stat-card"><div class="stat-label">Dystans</div><div class="stat-value">${(dist/1000).toFixed(0)}<span class="stat-unit">km</span></div></div>
+    <div class="stat-card"><div class="stat-label">Czas w siodle</div><div class="stat-value">${Math.floor(time/3600)}<span class="stat-unit">h</span></div></div>
+    <div class="stat-card"><div class="stat-label">Przewyższenie</div><div class="stat-value">${Math.round(elev)}<span class="stat-unit">m</span></div></div>
+    <div class="stat-card"><div class="stat-label">Śr. moc</div><div class="stat-value">${pw||'—'}<span class="stat-unit">${pw?'W':''}</span></div></div>`;
+}
+
+function renderActs(){
+  const filtered=filter==='all'?activities:activities.filter(a=>filter==='ride'?(a.type==='Ride'||a.type==='VirtualRide'):a.type==='Run');
+  return filtered.map(a=>{
+    const z=zone(a.average_heartrate);
+    const mainStat=a.distance>0?`<div class="big-stat">${fmtD(a.distance)}</div><div class="big-label">dystans</div>`:`<div class="big-stat">${fmt(a.moving_time)}</div><div class="big-label">czas</div>`;
+    return `<div class="activity-card" onclick="window.open('https://www.strava.com/activities/${a.id}','_blank')">
+      <div class="act-icon">${ico(a.type)}</div>
+      <div><div class="act-name">${a.name}</div>
+      <div class="act-meta">
+        <span>📅 ${fmtDate(a.start_date_local)}</span><span>⏱ ${fmt(a.moving_time)}</span>
+        ${a.average_heartrate?`<span>❤️ ${Math.round(a.average_heartrate)} BPM</span>`:''}
+        ${a.max_heartrate?`<span>🔴 max ${Math.round(a.max_heartrate)}</span>`:''}
+        ${a.average_watts?`<span>⚡ ${Math.round(a.average_watts)}W</span>`:''}
+        ${a.total_elevation_gain?`<span>⛰ ${Math.round(a.total_elevation_gain)}m</span>`:''}
+        ${z?`<span><span class="zone-tag ${z.c}">${z.l}</span></span>`:''}
+      </div></div>
+      <div class="act-stats">${mainStat}</div>
+    </div>`;
+  }).join('')||'<p style="color:var(--muted);padding:16px">Brak aktywności.</p>';
+}
+
+window.setFilter=f=>{filter=f;document.getElementById('actList').innerHTML=renderActs();document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.f===f));};
+window.loadMore=async()=>{
+  const btn=document.getElementById('lmBtn');btn.disabled=true;btn.textContent='Ładowanie...';
+  try{page++;const more=await apiFetch(`/api/activities?page=${page}`);if(more&&more.length){activities=activities.concat(more);document.getElementById('actList').innerHTML=renderActs();btn.disabled=false;btn.textContent='Załaduj więcej';}else{btn.textContent='Brak więcej';}}
+  catch(e){btn.textContent='Błąd';btn.disabled=false;}
+};
+
+async function init(){
+  try{
+    setStatus('loading','Łączenie ze Stravą...');
+    const [athleteData, actsData] = await Promise.all([
+      apiFetch('/api/athlete'),
+      apiFetch('/api/activities?page=1')
+    ]);
+    document.getElementById('athleteName').textContent=athleteData.firstname+' '+athleteData.lastname;
+    activities=actsData||[];
+    const weekActs=getWeekActs(activities);
+
+    setStatus('loading','Analiza AI w toku...');
+    let analysis=null;
+    try{analysis=await apiFetch('/api/analyze',{activities,weekActs});}
+    catch(e){console.warn('AI failed:',e);}
+
+    setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
+    document.getElementById('main').innerHTML=`
+      ${analysis?renderCoach(analysis):'<div class="error-box">⚠️ Analiza AI niedostępna.</div>'}
+      <div class="stats-row" style="display:grid">${renderStats(activities)}</div>
+      <div class="two-col">
+        <div class="panel"><div class="panel-title">Rozkład stref HR (rower)</div>${renderZones(activities)}<div style="margin-top:12px;font-size:10px;color:var(--muted)">Cel: S1+S2 ≥80%, S3 ≤5%, S4+S5 ~15-20%</div></div>
+        <div class="panel"><div class="panel-title">Plan tygodnia</div><div class="week-grid">${renderWeek(weekActs)}</div><div style="margin-top:12px;font-size:10px;color:var(--muted)">🟠 Zaplanowany  🟢 Wykonany  🔴 Pominięty</div></div>
+      </div>
+      <div class="section-title">Ostatnie aktywności</div>
+      <div class="filter-row">
+        <button class="filter-btn active" data-f="all" onclick="setFilter('all')">Wszystkie</button>
+        <button class="filter-btn" data-f="ride" onclick="setFilter('ride')">🚴 Rower</button>
+        <button class="filter-btn" data-f="run" onclick="setFilter('run')">🏃 Bieg</button>
+      </div>
+      <div class="activity-list" id="actList">${renderActs()}</div>
+      <button class="load-more" id="lmBtn" onclick="loadMore()">Załaduj więcej</button>`;
+  }catch(e){
+    setStatus('err','Błąd');
+    document.getElementById('main').innerHTML=`<div class="error-box">❌ <strong>Błąd:</strong> ${e.message}</div>`;
+  }
+}
+init();
+</script>
+</body>
+</html>
