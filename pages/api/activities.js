@@ -14,6 +14,7 @@ async function getAccessToken() {
     })
   });
   const data = await res.json();
+  if (!data.access_token) throw new Error('Token error: ' + JSON.stringify(data));
   return data.access_token;
 }
 
@@ -25,8 +26,9 @@ module.exports = async function handler(req, res) {
       headers: {'Authorization': 'Bearer ' + token}
     });
     const data = await r.json();
+    const activities = Array.isArray(data) ? data : [];
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json(data);
+    res.json(activities);
   } catch(e) {
     res.status(500).json({error: e.message});
   }
