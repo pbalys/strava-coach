@@ -108,7 +108,7 @@ Odpowiedz TYLKO JSON bez markdown:
 {"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena>","key_issues":["<problem>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co robić>"}`;
 
   try {
-    const text = await callClaude(userPrompt, 1000);
+    const text = await callClaude(userPrompt, 2000);
     const analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
     res.json(analysis);
   } catch(e) {
