@@ -48,10 +48,12 @@ export default async function handler(req, res) {
       zoneStr = Object.entries(zoneStats).map(([zone, {pct, mins}]) => `${zone}: ${pct}% (${mins}min)`).join(', ');
     }
 
+    const DAY_PL_SA = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
+    const dayName = DAY_PL_SA[new Date(a.start_date_local).getDay()];
     const userPrompt = `Aktywność do analizy:
 - Nazwa: ${a.name}
 - Typ: ${a.type}
-- Data: ${a.start_date_local}
+- Data: ${a.start_date_local} (${dayName})
 - Czas: ${Math.round(a.moving_time/60)} min
 - Dystans: ${a.distance>0?(a.distance/1000).toFixed(1)+' km':'—'}
 - Śr. HR: ${a.average_heartrate?Math.round(a.average_heartrate)+' BPM':'brak'}
@@ -72,8 +74,11 @@ Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu
 
   // Weekly analysis — NOTE: no zone distribution from avg_hr (misleading — avg_hr 142 = all time in S3,
   // hiding real S4/S5 spikes visible only in second-by-second stream data). Use avg_hr + max_hr per activity.
+  const DAY_PL = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
   const actSummary = (acts, n) => acts.slice(0, n).map(a => ({
-    name: a.name, type: a.type, date: a.start_date_local,
+    name: a.name, type: a.type,
+    date: a.start_date_local,
+    day: DAY_PL[new Date(a.start_date_local).getDay()],
     duration_min: Math.round(a.moving_time/60),
     distance_km: a.distance > 0 ? (a.distance/1000).toFixed(1) : '0',
     avg_hr: a.average_heartrate ? Math.round(a.average_heartrate) : null,

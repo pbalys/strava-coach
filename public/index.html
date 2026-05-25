@@ -219,10 +219,20 @@ function calcZones(acts) {
   return {counts,total};
 }
 
-function getWeekActs(acts){
+function getWeekMonday(){
   const now=new Date(),mon=new Date(now);
   mon.setDate(now.getDate()-((now.getDay()+6)%7));mon.setHours(0,0,0,0);
+  return mon;
+}
+function getWeekActs(acts){
+  const mon=getWeekMonday();
   return acts.filter(a=>new Date(a.start_date_local)>=mon);
+}
+function weekRangeStr(){
+  const mon=getWeekMonday();
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  const d=n=>n<10?'0'+n:n;
+  return `${d(mon.getDate())}.${d(mon.getMonth()+1)}–${d(sun.getDate())}.${d(sun.getMonth()+1)}`;
 }
 
 function scoreColor(s){return s>=75?'green':s>=50?'yellow':'red';}
@@ -272,8 +282,8 @@ function renderWeekList(weekActs){
 }
 
 function renderZones(acts, accZones){
-  const {counts,total}= accZones || calcZones(acts);
-  const label = accZones ? '' : ' <span style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(szacunkowy)</span>';
+  if(!accZones) return '<p style="color:var(--muted);font-size:12px;padding:8px 0">Brak danych stref (brak jazd w tym tygodniu lub błąd pobierania).</p>';
+  const {counts,total}= accZones;
   if(!total) return '<p style="color:var(--muted);font-size:12px">Brak danych HR</p>';
   const p={};
   ZONES.forEach(z=>{p[z.n]=Math.round(counts[z.n]/total*100);});
@@ -774,19 +784,19 @@ async function init(){
     setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
     document.getElementById('main').innerHTML=`
       ${analysis?renderScores(analysis):''}
-      <div class="section-title">Ten tydzień</div>
+      <div class="section-title">Ten tydzień <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
       <div class="activity-list" style="margin-bottom:20px">${renderWeekList(weekActs)}</div>
       ${analysis?renderCoachPanel(analysis):`<div class="error-box" style="margin-bottom:20px">⚠️ Analiza AI niedostępna.${aiError?`<br><span style="font-size:10px;opacity:.7">${aiError.slice(0,200)}</span>`:''}</div>`}
       <div class="stats-row" style="display:grid">${renderStats(activities)}</div>
       <div class="panel" style="margin-bottom:16px">
-        <div class="panel-title">Plan tygodnia</div>
+        <div class="panel-title">Plan tygodnia <span style="font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
         <div class="week-grid">${renderWeek(weekActs)}</div>
         <div style="margin-top:10px;font-size:10px;color:var(--muted);display:flex;gap:14px">
           <span>🟠 Zaplanowany</span><span>🟢 Wykonany</span><span>🔴 Pominięty</span>
         </div>
       </div>
       <div class="two-col">
-        <div class="panel"><div class="panel-title">Strefy HR – ten tydzień${accZones?'':' <span style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(szacunkowy)</span>'}</div>${renderZones(activities, accZones)}</div>
+        <div class="panel"><div class="panel-title">Strefy HR – ${weekRangeStr()}</div>${renderZones(activities, accZones)}</div>
         <div class="panel">
           <div class="panel-title">Obciążenie treningowe</div>
           <canvas id="loadChart" style="width:100%;height:130px;display:block"></canvas>
