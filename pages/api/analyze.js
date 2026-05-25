@@ -61,10 +61,10 @@ export default async function handler(req, res) {
 - Urządzenie: ${a.device_name||'nieznane'}
 ${zoneStr?`- Rozkład stref: ${zoneStr}`:''}
 
-Napisz krótką analizę PO POLSKU (3-5 zdań): oceń intensywność, czy to był właściwy trening w kontekście planu, co zrobił dobrze a co mógł zrobić lepiej. Bądź konkretny i bezpośredni.`;
+Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu, co konkretnie zrobił dobrze i co poprawić. Bez wstępu, bez powtarzania danych.`;
 
     try {
-      const text = await callClaude(userPrompt, 350);
+      const text = await callClaude(userPrompt, 220);
       return res.json({ activity_analysis: text });
     } catch(e) {
       return res.status(500).json({ error: e.message });
