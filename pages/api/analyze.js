@@ -70,15 +70,9 @@ Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu
     }
   }
 
-  // Weekly analysis
-  const counts = {1:0,2:0,3:0,4:0,5:0}; let total = 0;
-  activities.filter(a => a.type==='Ride'||a.type==='VirtualRide').forEach(a => {
-    if (a.average_heartrate) { const z = zoneForHR(a.average_heartrate); if (z) { counts[z.n] += a.moving_time; total += a.moving_time; } }
-  });
-  const zonePcts = {};
-  for (let i = 1; i <= 5; i++) zonePcts['S'+i] = total > 0 ? Math.round(counts[i]/total*100) : 0;
-
-  const weekSummary = (weekActs||[]).map(a => ({
+  // Weekly analysis — NOTE: no zone distribution from avg_hr (misleading — avg_hr 142 = all time in S3,
+  // hiding real S4/S5 spikes visible only in second-by-second stream data). Use avg_hr + max_hr per activity.
+  const actSummary = (acts, n) => acts.slice(0, n).map(a => ({
     name: a.name, type: a.type, date: a.start_date_local,
     duration_min: Math.round(a.moving_time/60),
     distance_km: a.distance > 0 ? (a.distance/1000).toFixed(1) : '0',
@@ -88,20 +82,11 @@ Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu
     device: a.device_name
   }));
 
-  const recentSummary = activities.slice(0, 10).map(a => ({
-    name: a.name, type: a.type, date: a.start_date_local,
-    duration_min: Math.round(a.moving_time/60),
-    distance_km: a.distance > 0 ? (a.distance/1000).toFixed(1) : '0',
-    avg_hr: a.average_heartrate ? Math.round(a.average_heartrate) : null,
-    avg_watts: (a.type==='VirtualRide' && a.average_watts) ? Math.round(a.average_watts) : null,
-    device: a.device_name
-  }));
-
   const today = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
 
-  const userPrompt = `ROZKŁAD STREF HR (rower, ostatnie aktywności): ${JSON.stringify(zonePcts)}
-TEN TYDZIEŃ: ${JSON.stringify(weekSummary)}
-OSTATNIE 10 AKTYWNOŚCI: ${JSON.stringify(recentSummary)}
+  const userPrompt = `UWAGA O DANYCH HR: avg_hr to średnia z całej aktywności — nie obliczaj stref z avg_hr (byłoby mylące). Używaj max_hr do oceny czy były rzeczywiste intensywności S4/S5. Np. avg_hr=142 + max_hr=175 oznacza że były piki w S4/S5 mimo że średnia to S3.
+TEN TYDZIEŃ: ${JSON.stringify(actSummary(weekActs||[], 20))}
+OSTATNIE 10 AKTYWNOŚCI: ${JSON.stringify(actSummary(activities, 10))}
 Dziś: ${today}
 
 Odpowiedz TYLKO JSON bez markdown:
