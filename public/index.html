@@ -46,7 +46,7 @@
   .coach-spinner { width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0; }
 
   /* Stats */
-  .stats-row { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px; }
+  .stats-row { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px; }
   .stat-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden; }
   .stat-card::before { content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange); }
   .stat-label { font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-weight:600; }
@@ -109,7 +109,7 @@
 
   @media(max-width:640px){
     .scores-row{grid-template-columns:repeat(2,1fr);}
-    .stats-row{grid-template-columns:repeat(2,1fr);}
+    .stats-row{grid-template-columns:repeat(1,1fr);}
     .two-col{grid-template-columns:1fr;}
     .modal-stats{grid-template-columns:repeat(2,1fr);}
     .container{padding:12px;}
@@ -369,20 +369,21 @@ function renderWeek(weekActs){
   }).join('');
 }
 
-function renderStats(acts){
-  const rides=acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide');
-  const dist=rides.reduce((s,a)=>s+a.distance,0),time=rides.reduce((s,a)=>s+a.moving_time,0),elev=rides.reduce((s,a)=>s+(a.total_elevation_gain||0),0);
-  const pws=rides.filter(a=>a.type==='VirtualRide'&&a.average_watts).map(a=>a.average_watts),pw=pws.length?Math.round(pws.reduce((a,b)=>a+b)/pws.length):null;
+function renderStatsTitle(acts){
   const d=n=>n<10?'0'+n:n;
   const fmtD2=s=>{const dt=new Date(s);return `${d(dt.getDate())}.${d(dt.getMonth()+1)}`;};
   const from=acts.length?fmtD2(acts[acts.length-1].start_date_local):'';
   const to=acts.length?fmtD2(acts[0].start_date_local):'';
-  const rangeLabel=from&&to?` <span style="font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${from}–${to} (${acts.length} aktywności)</span>`:'';
-  return `<div class="section-title" style="margin-bottom:10px">Statystyki${rangeLabel}</div>
+  const rangeLabel=from&&to?` <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${from}–${to} (${acts.length} aktywności)</span>`:'';
+  return `<div class="section-title">Statystyki${rangeLabel}</div>`;
+}
+function renderStats(acts){
+  const rides=acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide');
+  const dist=rides.reduce((s,a)=>s+a.distance,0),time=rides.reduce((s,a)=>s+a.moving_time,0),elev=rides.reduce((s,a)=>s+(a.total_elevation_gain||0),0);
+  return `
     <div class="stat-card"><div class="stat-label">Dystans</div><div class="stat-value">${(dist/1000).toFixed(0)}<span class="stat-unit">km</span></div></div>
     <div class="stat-card"><div class="stat-label">Czas w siodle</div><div class="stat-value">${Math.floor(time/3600)}<span class="stat-unit">h</span></div></div>
-    <div class="stat-card"><div class="stat-label">Przewyższenie</div><div class="stat-value">${Math.round(elev)}<span class="stat-unit">m</span></div></div>
-    <div class="stat-card"><div class="stat-label">Śr. moc</div><div class="stat-value">${pw||'—'}<span class="stat-unit">${pw?'W':''}</span></div></div>`;
+    <div class="stat-card"><div class="stat-label">Przewyższenie</div><div class="stat-value">${Math.round(elev)}<span class="stat-unit">m</span></div></div>`;
 }
 
 function renderActs(){
@@ -788,11 +789,12 @@ async function init(){
 
     setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
     document.getElementById('main').innerHTML=`
-      ${analysis?renderScores(analysis):''}
+      ${analysis?`<div class="section-title">Ocena tygodnia <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>${renderScores(analysis)}`:''}
       <div class="section-title">Ten tydzień <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
       <div class="activity-list" style="margin-bottom:20px">${renderWeekList(weekActs)}</div>
       ${analysis?renderCoachPanel(analysis):`<div class="error-box" style="margin-bottom:20px">⚠️ Analiza AI niedostępna.${aiError?`<br><span style="font-size:10px;opacity:.7">${aiError.slice(0,200)}</span>`:''}</div>`}
-      <div class="stats-row" style="display:grid">${renderStats(activities)}</div>
+      ${renderStatsTitle(activities)}
+      <div class="stats-row">${renderStats(activities)}</div>
       <div class="panel" style="margin-bottom:16px">
         <div class="panel-title">Plan tygodnia <span style="font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
         <div class="week-grid">${renderWeek(weekActs)}</div>
