@@ -30,7 +30,7 @@ async function callClaude(userPrompt, maxTokens) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { activities, weekActs, singleActivity, zoneStats } = req.body;
+  const { activities, weekActs, singleActivity, zoneStats, weekZonePcts } = req.body;
 
   const ZONES = [
     { n:1, min:0,   max:104 },
@@ -84,7 +84,11 @@ Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu
 
   const today = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
 
-  const userPrompt = `UWAGA O DANYCH HR: avg_hr to średnia z całej aktywności — nie obliczaj stref z avg_hr (byłoby mylące). Używaj max_hr do oceny czy były rzeczywiste intensywności S4/S5. Np. avg_hr=142 + max_hr=175 oznacza że były piki w S4/S5 mimo że średnia to S3.
+  const zonesLine = weekZonePcts
+    ? `ROZKŁAD STREF HR ten tydzień (dane sekundowe, dokładne): ${JSON.stringify(weekZonePcts)}`
+    : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr to tylko średnia, nie odzwierciedla pików S4/S5.`;
+
+  const userPrompt = `${zonesLine}
 TEN TYDZIEŃ: ${JSON.stringify(actSummary(weekActs||[], 20))}
 OSTATNIE 10 AKTYWNOŚCI: ${JSON.stringify(actSummary(activities, 10))}
 Dziś: ${today}

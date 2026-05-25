@@ -271,8 +271,9 @@ function renderWeekList(weekActs){
   }).join('');
 }
 
-function renderZones(acts){
-  const {counts,total}=calcZones(acts);
+function renderZones(acts, accZones){
+  const {counts,total}= accZones || calcZones(acts);
+  const label = accZones ? '' : ' <span style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(szacunkowy)</span>';
   if(!total) return '<p style="color:var(--muted);font-size:12px">Brak danych HR</p>';
   const p={};
   ZONES.forEach(z=>{p[z.n]=Math.round(counts[z.n]/total*100);});
@@ -388,6 +389,43 @@ function renderActs(){
       <div class="act-stats">${mainStat}</div>
     </div>`;
   }).join('')||'<p style="color:var(--muted);padding:16px">Brak aktywności.</p>';
+}
+
+async function fetchAccurateZones(rideIds) {
+  if (!rideIds.length) return null;
+  // Check per-activity cache (historical activities never change)
+  const toFetch = [], cached = {};
+  rideIds.forEach(id => {
+    try {
+      const c = JSON.parse(localStorage.getItem('az_'+id)||'null');
+      if (c) cached[id] = c; else toFetch.push(id);
+    } catch(e) { toFetch.push(id); }
+  });
+
+  if (toFetch.length) {
+    try {
+      const data = await apiFetch(`/api/batchstreams?ids=${toFetch.join(',')}`);
+      toFetch.forEach(id => {
+        const s = data[id];
+        if (s && s.heartrate && s.time) {
+          const r = calcZonesFromStreams(s.heartrate.data, s.time.data);
+          const zc = {};
+          ZONES.forEach(z => { zc[z.n] = r.counts[z.n]; });
+          cached[id] = {c: zc, t: r.total};
+          try { localStorage.setItem('az_'+id, JSON.stringify(cached[id])); } catch(e){}
+        }
+      });
+    } catch(e) {}
+  }
+
+  const counts = {1:0,2:0,3:0,4:0,5:0}; let total = 0;
+  rideIds.forEach(id => {
+    const z = cached[id];
+    if (!z) return;
+    ZONES.forEach(zn => { counts[zn.n] += z.c[zn.n]||0; });
+    total += z.t;
+  });
+  return total > 0 ? {counts, total} : null;
 }
 
 function estimateTSS(a) {
@@ -719,9 +757,18 @@ async function init(){
     activities=actsData||[];
     const weekActs=getWeekActs(activities);
 
+    setStatus('loading','Pobieranie stref HR...');
+    const rideIds=weekActs.filter(a=>a.type==='Ride'||a.type==='VirtualRide').map(a=>a.id);
+    const accZones=await fetchAccurateZones(rideIds);
+
     setStatus('loading','Analiza AI w toku...');
     let analysis=null, aiError=null;
-    try{analysis=await apiFetch('/api/analyze',{activities,weekActs});}
+    const weekZonePcts = accZones ? (() => {
+      const o={};
+      ZONES.forEach(z=>{o['S'+z.n]={pct:Math.round(accZones.counts[z.n]/accZones.total*100),mins:Math.round(accZones.counts[z.n]/60)};});
+      return o;
+    })() : null;
+    try{analysis=await apiFetch('/api/analyze',{activities,weekActs,weekZonePcts});}
     catch(e){console.warn('AI failed:',e);aiError=e.message;}
 
     setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
@@ -739,7 +786,7 @@ async function init(){
         </div>
       </div>
       <div class="two-col">
-        <div class="panel"><div class="panel-title">Rozkład stref HR (rower) <span style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">· szacunkowy (śr. HR)</span></div>${renderZones(activities)}</div>
+        <div class="panel"><div class="panel-title">Strefy HR – ten tydzień${accZones?'':' <span style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(szacunkowy)</span>'}</div>${renderZones(activities, accZones)}</div>
         <div class="panel">
           <div class="panel-title">Obciążenie treningowe</div>
           <canvas id="loadChart" style="width:100%;height:130px;display:block"></canvas>
