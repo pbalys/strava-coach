@@ -15,17 +15,16 @@ async function callClaude(userPrompt, maxTokens) {
       'Content-Type': 'application/json',
       'x-api-key': ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'prompt-caching-2024-07-31'
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: maxTokens,
-      system: [{ type: 'text', text: SYSTEM_PROFILE, cache_control: { type: 'ephemeral' } }],
+      system: SYSTEM_PROFILE,
       messages: [{ role: 'user', content: userPrompt }]
     })
   });
   const data = await r.json();
-  if (data.error) throw new Error(data.error.message);
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
   return data.content.filter(b => b.type === 'text').map(b => b.text).join('');
 }
 

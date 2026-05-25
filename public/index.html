@@ -362,44 +362,41 @@ function drawLoadChart(canvas, data) {
   canvas.width = w * dpr; canvas.height = h * dpr;
   ctx.scale(dpr, dpr);
 
-  const PAD = {top:10, right:12, bottom:28, left:36};
+  const PAD = {top:12, right:12, bottom:28, left:36};
   const cw = w - PAD.left - PAD.right, ch = h - PAD.top - PAD.bottom;
-  const yMax = Math.max(...data.map(d => Math.max(d.ctl, d.atl)), 20) * 1.12;
-  const tsbMax = Math.max(...data.map(d => Math.abs(d.tsb)), 5);
-  const yMid = PAD.top + ch * 0.68;
+  const yMax = Math.max(...data.map(d => Math.max(d.ctl, d.atl)), 10) * 1.15;
 
   const xS = i => PAD.left + (i / (data.length - 1)) * cw;
   const yS = v => PAD.top + ch - (Math.max(0, v) / yMax) * ch;
 
   // Grid
   ctx.font = `9px 'Barlow', sans-serif`; ctx.textAlign = 'right';
-  [0, 25, 50, 75, 100].filter(v => v < yMax).forEach(v => {
+  const step = yMax > 60 ? 25 : 20;
+  for (let v = 0; v <= yMax; v += step) {
     const y = yS(v);
     ctx.strokeStyle = '#252525'; ctx.lineWidth = 0.5;
     ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cw, y); ctx.stroke();
-    ctx.fillStyle = '#444'; ctx.fillText(v, PAD.left - 3, y + 3);
-  });
+    ctx.fillStyle = '#444'; ctx.fillText(Math.round(v), PAD.left - 3, y + 3);
+  }
 
-  // TSB bars
-  const barW = Math.max(2, cw / data.length * 0.8);
-  data.forEach((d, i) => {
-    const x = xS(i), bh = (Math.abs(d.tsb) / tsbMax) * ch * 0.28;
-    ctx.fillStyle = d.tsb >= 0 ? '#00d4aa22' : '#ff444422';
-    if (d.tsb >= 0) ctx.fillRect(x - barW/2, yMid - bh, barW, bh);
-    else ctx.fillRect(x - barW/2, yMid, barW, bh);
-  });
+  // Colored area between CTL and ATL (red=zmęczony, green=świeży)
+  for (let i = 1; i < data.length; i++) {
+    const dp = data[i-1], d = data[i];
+    const x1 = xS(i-1), x2 = xS(i);
+    ctx.beginPath();
+    ctx.moveTo(x1, yS(dp.ctl)); ctx.lineTo(x2, yS(d.ctl));
+    ctx.lineTo(x2, yS(d.atl)); ctx.lineTo(x1, yS(dp.atl));
+    ctx.closePath();
+    ctx.fillStyle = d.tsb < 0 ? '#ff220018' : '#00dd8818';
+    ctx.fill();
+  }
 
-  // TSB zero line
-  ctx.strokeStyle = '#333'; ctx.lineWidth = 0.5; ctx.setLineDash([4,4]);
-  ctx.beginPath(); ctx.moveTo(PAD.left, yMid); ctx.lineTo(PAD.left + cw, yMid); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // ATL
+  // ATL line
   ctx.beginPath(); ctx.strokeStyle = '#FF6B35'; ctx.lineWidth = 2;
   data.forEach((d, i) => i ? ctx.lineTo(xS(i), yS(d.atl)) : ctx.moveTo(xS(i), yS(d.atl)));
   ctx.stroke();
 
-  // CTL
+  // CTL line
   ctx.beginPath(); ctx.strokeStyle = '#4da6ff'; ctx.lineWidth = 2.5;
   data.forEach((d, i) => i ? ctx.lineTo(xS(i), yS(d.ctl)) : ctx.moveTo(xS(i), yS(d.ctl)));
   ctx.stroke();
@@ -667,12 +664,12 @@ async function init(){
       <div class="panel" style="margin-bottom:16px">
         <div class="panel-title">Obciążenie treningowe · Fitness / Zmęczenie / Forma</div>
         <canvas id="loadChart" style="width:100%;height:160px;display:block"></canvas>
-        <div style="display:flex;gap:20px;margin-top:8px;font-size:11px;flex-wrap:wrap;align-items:center">
-          <span style="color:#4da6ff">● Fitness (CTL) <strong id="ctlVal">—</strong></span>
-          <span style="color:#FF6B35">● Zmęczenie (ATL) <strong id="atlVal">—</strong></span>
-          <span>● Forma (TSB) <strong id="tsbVal">—</strong></span>
+        <div style="display:flex;gap:20px;margin-top:10px;font-size:11px;flex-wrap:wrap;align-items:center">
+          <span style="color:#4da6ff">● Fitness <strong id="ctlVal">—</strong></span>
+          <span style="color:#FF6B35">● Zmęczenie <strong id="atlVal">—</strong></span>
+          <span id="tsbBadge" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">Forma: <span id="tsbVal">—</span></span>
         </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px">TSS z mocy lub HR · CTL=42-dniowa śr. · ATL=7-dniowa śr. · Forma=CTL−ATL</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">Niebieski = fitness (42-dniowa śr.) · Pomarańczowy = zmęczenie (7-dniowa śr.) · Obszar: 🔴 zmęczony / 🟢 świeży</div>
       </div>
       <div class="two-col">
         <div class="panel"><div class="panel-title">Rozkład stref HR (rower)</div>${renderZones(activities)}<div style="margin-top:12px;font-size:10px;color:var(--muted)">Cel: S1+S2 ≥80%, S3 ≤5%, S4+S5 ~15-20%</div></div>
@@ -690,10 +687,14 @@ async function init(){
     const td = loadData[loadData.length - 1];
     document.getElementById('ctlVal').textContent = Math.round(td.ctl);
     document.getElementById('atlVal').textContent = Math.round(td.atl);
-    const tsbEl = document.getElementById('tsbVal');
     const tsb = Math.round(td.tsb * 10) / 10;
-    tsbEl.textContent = (tsb > 0 ? '+' : '') + tsb;
-    tsbEl.style.color = tsb > 5 ? 'var(--green)' : tsb < -10 ? 'var(--red)' : 'var(--yellow)';
+    const tsbSign = tsb > 0 ? '+' : '';
+    const badge = document.getElementById('tsbBadge');
+    document.getElementById('tsbVal').textContent = tsbSign + tsb;
+    if (tsb > 10)       { badge.style.cssText += ';background:#0a2a0a;color:#00d4aa'; badge.firstChild.textContent = 'Świeży '; }
+    else if (tsb > -10) { badge.style.cssText += ';background:#2a2000;color:#f5c518'; badge.firstChild.textContent = 'Neutralny '; }
+    else if (tsb > -25) { badge.style.cssText += ';background:#2a1200;color:#ffa500'; badge.firstChild.textContent = 'Zmęczony '; }
+    else                { badge.style.cssText += ';background:#2a0808;color:#ff4444'; badge.firstChild.textContent = 'Przeciążony '; }
     setTimeout(() => drawLoadChart(document.getElementById('loadChart'), loadData), 50);
   }catch(e){
     setStatus('err','Błąd');
