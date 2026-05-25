@@ -21,17 +21,10 @@
   .dot { width:7px;height:7px;border-radius:50%;background:var(--muted); }
   .dot.ok{background:var(--green);} .dot.err{background:var(--red);} .dot.loading{background:var(--yellow);animation:pulse 1s infinite;}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .container { padding:20px 24px; max-width:1200px; margin:0 auto; }
-  .coach-panel { background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden; }
-  .coach-header { background:#1a1500;border-bottom:1px solid #3a2a00;padding:14px 20px;display:flex;align-items:center;gap:10px; }
-  .coach-icon { font-size:22px; }
-  .coach-title { font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--yellow); }
-  .coach-subtitle { font-size:11px;color:var(--muted);margin-left:auto; }
-  .coach-body { padding:20px; }
-  .coach-loading { display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px; }
-  .coach-spinner { width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0; }
   @keyframes spin{to{transform:rotate(360deg)}}
-  .coach-text { font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap; }
+  .container { padding:20px 24px; max-width:1200px; margin:0 auto; }
+
+  /* Scores */
   .scores-row { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px; }
   .score-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;position:relative;overflow:hidden; }
   .score-card::before { content:'';position:absolute;top:0;left:0;right:0;height:3px; }
@@ -40,15 +33,32 @@
   .score-value { font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;line-height:1; }
   .score-value.green{color:var(--green);} .score-value.yellow{color:var(--yellow);} .score-value.red{color:var(--red);}
   .score-sub { font-size:10px;color:var(--muted);margin-top:4px; }
+
+  /* Coach panel */
+  .coach-panel { background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden; }
+  .coach-header { background:#1a1500;border-bottom:1px solid #3a2a00;padding:14px 20px;display:flex;align-items:center;gap:10px; }
+  .coach-icon { font-size:22px; }
+  .coach-title { font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--yellow); }
+  .coach-subtitle { font-size:11px;color:var(--muted);margin-left:auto; }
+  .coach-body { padding:20px; }
+  .coach-text { font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap; }
+  .coach-loading { display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px; }
+  .coach-spinner { width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0; }
+
+  /* Stats */
   .stats-row { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px; }
   .stat-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden; }
   .stat-card::before { content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange); }
   .stat-label { font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-weight:600; }
   .stat-value { font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1; }
   .stat-unit { font-size:12px;font-weight:400;color:var(--muted);margin-left:3px; }
+
+  /* Two col */
   .two-col { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px; }
   .panel { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px; }
   .panel-title { font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border); }
+
+  /* Zone bars */
   .zone-row { display:flex;align-items:center;gap:10px;margin-bottom:8px; }
   .zone-name { font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;width:28px; }
   .zone-bar-bg { flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden; }
@@ -59,6 +69,8 @@
   .zone-s3 .zone-bar{background:#ffa500;} .zone-s3 .zone-name{color:#ffa500;}
   .zone-s4 .zone-bar{background:#ff6666;} .zone-s4 .zone-name{color:#ff6666;}
   .zone-s5 .zone-bar{background:var(--red);} .zone-s5 .zone-name{color:var(--red);}
+
+  /* Week */
   .week-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:6px; }
   .day-cell { background:var(--mid);border:1px solid var(--border);border-radius:6px;padding:8px 4px;text-align:center; }
   .day-name { font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;font-family:'Barlow Condensed',sans-serif; }
@@ -68,6 +80,8 @@
   .day-cell.planned{border-color:var(--orange);background:#1f0a00;}
   .day-cell.missed{border-color:var(--red);background:#1f0000;}
   .day-cell.rest{opacity:.4;}
+
+  /* Activities */
   .section-title { font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border); }
   .filter-row { display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap; }
   .filter-btn { padding:5px 13px;background:var(--card);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .2s;font-family:'Barlow',sans-serif; }
@@ -89,6 +103,27 @@
   .error-box{background:#2a1010;border:1px solid #5a2020;border-radius:8px;padding:14px;color:#f88;font-size:12px;line-height:1.7;}
   .global-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted);gap:14px;}
   .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite;}
+
+  /* Activity detail modal */
+  .modal-overlay { position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px; }
+  .modal { background:var(--card);border:1px solid var(--border);border-radius:12px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto; }
+  .modal-header { padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px; }
+  .modal-title { font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;flex:1; }
+  .modal-close { background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px; }
+  .modal-close:hover{color:var(--text);}
+  .modal-body { padding:20px; }
+  .modal-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px; }
+  .modal-stat { background:var(--mid);border-radius:8px;padding:12px;text-align:center; }
+  .modal-stat-label { font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px; }
+  .modal-stat-value { font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700; }
+
+  /* HR chart */
+  .hr-chart { width:100%;height:120px;margin-bottom:20px;position:relative; }
+  canvas { width:100%;height:100%; }
+
+  /* AI activity analysis */
+  .act-analysis { background:var(--mid);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap; }
+  .act-analysis-loading { display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:14px; }
 </style>
 </head>
 <body>
@@ -107,8 +142,28 @@
   </div>
 </div>
 
+<!-- Activity detail modal -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span id="modalTitle" class="modal-title"></span>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <div class="global-loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
 <script>
-const HR_MAX = 179;
+const HR_MAX = 177;
+const ZONES = [
+  { n:1, label:'S1', min:0,   max:104, color:'#4da6ff', cls:'zt-s1' },
+  { n:2, label:'S2', min:105, max:138, color:'#00d4aa', cls:'zt-s2' },
+  { n:3, label:'S3', min:139, max:155, color:'#ffa500', cls:'zt-s3' },
+  { n:4, label:'S4', min:156, max:172, color:'#ff6666', cls:'zt-s4' },
+  { n:5, label:'S5', min:173, max:999, color:'#ff4444', cls:'zt-s5' },
+];
 const PLAN = { 2:'intervals', 4:'easy', 6:'long' };
 let activities = [], filter = 'all', page = 1;
 
@@ -123,31 +178,24 @@ async function apiFetch(path, body) {
     headers: {'Content-Type':'application/json'},
     body: body ? JSON.stringify(body) : undefined
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err || res.status);
-  }
+  if (!res.ok) throw new Error(await res.text() || res.status);
   return res.json();
 }
 
 function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h ${m}m`:`${m}min`;}
 function fmtD(m){return (m/1000).toFixed(1)+' km';}
 function fmtDate(s){return new Date(s).toLocaleDateString('pl-PL',{day:'numeric',month:'short'});}
-function ico(t){return {Ride:'🚴',VirtualRide:'🖥️',Run:'🏃',Walk:'🚶',Swim:'🏊',Hike:'🥾',WeightTraining:'🏋️',Workout:'💪'}[t]||'🏅';}
-function zone(hr){
-  if(!hr) return null;
-  const p=hr/HR_MAX*100;
-  if(p<60) return{l:'S1',c:'zt-s1',n:1};
-  if(p<70) return{l:'S2',c:'zt-s2',n:2};
-  if(p<80) return{l:'S3',c:'zt-s3',n:3};
-  if(p<90) return{l:'S4',c:'zt-s4',n:4};
-  return{l:'S5',c:'zt-s5',n:5};
+function ico(t){return {Ride:'🚴',VirtualRide:'🖥️',Run:'🏃',Walk:'🚶',Swim:'🏊',Hike:'🥾',WeightTraining:'🏋️',Workout:'💪',Snowboard:'🏂'}[t]||'🏅';}
+
+function zoneForHR(hr) {
+  if (!hr) return null;
+  return ZONES.find(z => hr >= z.min && hr <= z.max) || null;
 }
 
 function calcZones(acts) {
   const counts={1:0,2:0,3:0,4:0,5:0}; let total=0;
   acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide').forEach(a=>{
-    if(a.average_heartrate){const z=zone(a.average_heartrate);if(z){counts[z.n]+=a.moving_time;total+=a.moving_time;}}
+    if(a.average_heartrate){const z=zoneForHR(a.average_heartrate);if(z){counts[z.n]+=a.moving_time;total+=a.moving_time;}}
   });
   return {counts,total};
 }
@@ -160,27 +208,30 @@ function getWeekActs(acts){
 
 function scoreColor(s){return s>=75?'green':s>=50?'yellow':'red';}
 
-function renderCoach(a){
+function renderScores(a){
   const oc=scoreColor(a.overall_score),pc=scoreColor(a.polarization_score),plc=scoreColor(a.plan_score),rc=scoreColor(a.recovery_score);
-  return `
-  <div class="scores-row">
+  return `<div class="scores-row">
     <div class="score-card ${oc}"><div class="score-label">Ocena tygodnia</div><div class="score-value ${oc}">${a.overall_score}</div><div class="score-sub">/ 100</div></div>
     <div class="score-card ${pc}"><div class="score-label">Polaryzacja</div><div class="score-value ${pc}">${a.polarization_score}</div><div class="score-sub">/ 100</div></div>
     <div class="score-card ${plc}"><div class="score-label">Plan Wt/Czw/Sob</div><div class="score-value ${plc}">${a.plan_score}</div><div class="score-sub">/ 100</div></div>
     <div class="score-card ${rc}"><div class="score-label">Regeneracja</div><div class="score-value ${rc}">${a.recovery_score}</div><div class="score-sub">/ 100</div></div>
-  </div>
+  </div>`;
+}
+
+function renderCoach(a){
+  return `${renderScores(a)}
   <div class="coach-panel">
     <div class="coach-header"><span class="coach-icon">🧠</span><span class="coach-title">Analiza trenera AI</span><span class="coach-subtitle">Aktualizacja przy każdym otwarciu</span></div>
     <div class="coach-body"><div class="coach-text"><strong>📋 Podsumowanie</strong>
 ${a.summary}
 
-<strong>🎯 Polaryzacja treningu</strong>
+<strong>🎯 Polaryzacja</strong>
 ${a.polarization_assessment}
 
 <strong>📅 Realizacja planu</strong>
 ${a.plan_assessment}
 
-<strong>😴 Regeneracja i objętość</strong>
+<strong>😴 Regeneracja</strong>
 ${a.recovery_assessment}
 ${a.key_issues&&a.key_issues.length?`
 <strong>⚠️ Problemy</strong>
@@ -197,11 +248,10 @@ ${a.next_workout}</div></div>
 function renderZones(acts){
   const {counts,total}=calcZones(acts);
   if(!total) return '<p style="color:var(--muted);font-size:12px">Brak danych HR</p>';
-  return [1,2,3,4,5].map(n=>{
-    const pct=Math.round(counts[n]/total*100);
-    const ranges=['<107','107-125','125-143','143-161','>161'];
-    return `<div class="zone-row zone-s${n}">
-      <div class="zone-name">S${n}</div>
+  return ZONES.map(z=>{
+    const pct=Math.round(counts[z.n]/total*100);
+    return `<div class="zone-row zone-s${z.n}">
+      <div class="zone-name">${z.label}</div>
       <div class="zone-bar-bg"><div class="zone-bar" style="width:${pct}%"></div></div>
       <div class="zone-pct">${pct}%</div>
     </div>`;
@@ -240,9 +290,9 @@ function renderStats(acts){
 function renderActs(){
   const filtered=filter==='all'?activities:activities.filter(a=>filter==='ride'?(a.type==='Ride'||a.type==='VirtualRide'):a.type==='Run');
   return filtered.map(a=>{
-    const z=zone(a.average_heartrate);
+    const z=zoneForHR(a.average_heartrate);
     const mainStat=a.distance>0?`<div class="big-stat">${fmtD(a.distance)}</div><div class="big-label">dystans</div>`:`<div class="big-stat">${fmt(a.moving_time)}</div><div class="big-label">czas</div>`;
-    return `<div class="activity-card" onclick="window.open('https://www.strava.com/activities/${a.id}','_blank')">
+    return `<div class="activity-card" onclick="openActivity(${a.id},'${a.name.replace(/'/g,"\\'")}')">
       <div class="act-icon">${ico(a.type)}</div>
       <div><div class="act-name">${a.name}</div>
       <div class="act-meta">
@@ -251,13 +301,136 @@ function renderActs(){
         ${a.max_heartrate?`<span>🔴 max ${Math.round(a.max_heartrate)}</span>`:''}
         ${a.average_watts?`<span>⚡ ${Math.round(a.average_watts)}W</span>`:''}
         ${a.total_elevation_gain?`<span>⛰ ${Math.round(a.total_elevation_gain)}m</span>`:''}
-        ${z?`<span><span class="zone-tag ${z.c}">${z.l}</span></span>`:''}
+        ${z?`<span><span class="zone-tag ${z.cls}">${z.label}</span></span>`:''}
       </div></div>
       <div class="act-stats">${mainStat}</div>
     </div>`;
   }).join('')||'<p style="color:var(--muted);padding:16px">Brak aktywności.</p>';
 }
 
+// Zone distribution from streams data
+function calcZonesFromStreams(hrData, timeData) {
+  const counts={1:0,2:0,3:0,4:0,5:0};
+  let total=0;
+  for(let i=1;i<hrData.length;i++){
+    const hr=hrData[i];
+    const dt=timeData[i]-timeData[i-1];
+    const z=zoneForHR(hr);
+    if(z&&dt>0&&dt<30){counts[z.n]+=dt;total+=dt;}
+  }
+  return {counts,total};
+}
+
+function drawHRChart(canvas, hrData, timeData) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  const H = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+
+  const minHR = Math.max(60, Math.min(...hrData) - 10);
+  const maxHR = Math.max(...hrData) + 10;
+  const totalTime = timeData[timeData.length-1];
+
+  // Zone backgrounds
+  ZONES.forEach(z => {
+    const y1 = h - ((Math.min(z.max, maxHR) - minHR) / (maxHR - minHR)) * h;
+    const y2 = h - ((Math.max(z.min, minHR) - minHR) / (maxHR - minHR)) * h;
+    ctx.fillStyle = z.color + '15';
+    ctx.fillRect(0, Math.max(0,y1), w, Math.min(h,y2)-Math.max(0,y1));
+  });
+
+  // HR line
+  ctx.beginPath();
+  ctx.strokeStyle = '#FC4C02';
+  ctx.lineWidth = 1.5;
+  hrData.forEach((hr, i) => {
+    const x = (timeData[i] / totalTime) * w;
+    const y = h - ((hr - minHR) / (maxHR - minHR)) * h;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Fill under line
+  ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+  ctx.fillStyle = '#FC4C0220';
+  ctx.fill();
+}
+
+async function openActivity(id, name) {
+  document.getElementById('modalTitle').textContent = name;
+  document.getElementById('modalBody').innerHTML = '<div class="global-loading"><div class="spinner"></div></div>';
+  document.getElementById('modal').style.display = 'flex';
+
+  try {
+    const [streams, detail] = await Promise.all([
+      apiFetch(`/api/streams?id=${id}`),
+      apiFetch(`/api/activity?id=${id}`)
+    ]);
+
+    const hrData = streams.heartrate?.data || [];
+    const timeData = streams.time?.data || [];
+    const hasHR = hrData.length > 0;
+
+    let zoneHtml = '';
+    if (hasHR) {
+      const {counts, total} = calcZonesFromStreams(hrData, timeData);
+      zoneHtml = `<div class="panel-title">Rozkład stref HR (dane co sekundę)</div>` +
+        ZONES.map(z => {
+          const pct = total > 0 ? Math.round(counts[z.n]/total*100) : 0;
+          const mins = Math.round(counts[z.n]/60);
+          return `<div class="zone-row zone-s${z.n}">
+            <div class="zone-name">${z.label}</div>
+            <div class="zone-bar-bg"><div class="zone-bar" style="width:${pct}%"></div></div>
+            <div class="zone-pct">${pct}% <span style="color:var(--muted);font-size:9px">${mins}m</span></div>
+          </div>`;
+        }).join('');
+    }
+
+    document.getElementById('modalBody').innerHTML = `
+      <div class="modal-stats">
+        <div class="modal-stat"><div class="modal-stat-label">Dystans</div><div class="modal-stat-value">${detail.distance>0?fmtD(detail.distance):'—'}</div></div>
+        <div class="modal-stat"><div class="modal-stat-label">Czas</div><div class="modal-stat-value">${fmt(detail.moving_time)}</div></div>
+        <div class="modal-stat"><div class="modal-stat-label">Śr. HR</div><div class="modal-stat-value">${detail.average_heartrate?Math.round(detail.average_heartrate)+' BPM':'—'}</div></div>
+        <div class="modal-stat"><div class="modal-stat-label">Max HR</div><div class="modal-stat-value">${detail.max_heartrate?Math.round(detail.max_heartrate)+' BPM':'—'}</div></div>
+        <div class="modal-stat"><div class="modal-stat-label">Śr. moc</div><div class="modal-stat-value">${detail.average_watts?Math.round(detail.average_watts)+' W':'—'}</div></div>
+        <div class="modal-stat"><div class="modal-stat-label">Przewyższenie</div><div class="modal-stat-value">${detail.total_elevation_gain?Math.round(detail.total_elevation_gain)+' m':'—'}</div></div>
+      </div>
+      ${hasHR ? `<div class="hr-chart"><canvas id="hrCanvas"></canvas></div>` : ''}
+      <div style="margin-bottom:16px">${zoneHtml}</div>
+      <div class="panel-title" style="margin-bottom:10px">Analiza AI 🧠</div>
+      <div id="actAnalysis" class="act-analysis-loading"><div class="coach-spinner"></div><span>Analizuję trening...</span></div>
+      <div style="margin-top:12px"><a href="https://www.strava.com/activities/${id}" target="_blank" style="color:var(--orange);font-size:12px;text-decoration:none">Otwórz na Stravie →</a></div>
+    `;
+
+    if (hasHR) {
+      const canvas = document.getElementById('hrCanvas');
+      setTimeout(() => drawHRChart(canvas, hrData, timeData), 50);
+    }
+
+    // AI analysis of this specific activity
+    try {
+      const analysis = await apiFetch('/api/analyze', {
+        activities: [detail],
+        weekActs: [detail],
+        singleActivity: true,
+        hrData: hasHR ? hrData.slice(0, 500) : [],
+        timeData: hasHR ? timeData.slice(0, 500) : []
+      });
+      document.getElementById('actAnalysis').className = 'act-analysis';
+      document.getElementById('actAnalysis').textContent = analysis.activity_analysis || analysis.summary || 'Brak analizy.';
+    } catch(e) {
+      document.getElementById('actAnalysis').className = 'act-analysis';
+      document.getElementById('actAnalysis').textContent = 'Analiza AI niedostępna.';
+    }
+
+  } catch(e) {
+    document.getElementById('modalBody').innerHTML = `<div class="error-box">❌ ${e.message}</div>`;
+  }
+}
+
+window.closeModal = (e) => { if(e.target.id==='modal') document.getElementById('modal').style.display='none'; };
+window.closeModalBtn = () => { document.getElementById('modal').style.display='none'; };
 window.setFilter=f=>{filter=f;document.getElementById('actList').innerHTML=renderActs();document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.f===f));};
 window.loadMore=async()=>{
   const btn=document.getElementById('lmBtn');btn.disabled=true;btn.textContent='Ładowanie...';
