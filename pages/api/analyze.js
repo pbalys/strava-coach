@@ -31,7 +31,7 @@ async function callClaude(userPrompt, maxTokens) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { activities, weekActs, singleActivity, hrData, timeData } = req.body;
+  const { activities, weekActs, singleActivity, zoneStats } = req.body;
 
   const ZONES = [
     { n:1, min:0,   max:104 },
@@ -45,16 +45,8 @@ export default async function handler(req, res) {
   if (singleActivity && activities && activities[0]) {
     const a = activities[0];
     let zoneStr = '';
-    if (hrData && hrData.length > 0 && timeData && timeData.length > 0) {
-      const counts = {1:0,2:0,3:0,4:0,5:0}; let total = 0;
-      for (let i = 1; i < hrData.length; i++) {
-        const hr = hrData[i], dt = timeData[i] - timeData[i-1];
-        const z = zoneForHR(hr);
-        if (z && dt > 0 && dt < 30) { counts[z.n] += dt; total += dt; }
-      }
-      zoneStr = Object.entries(counts).map(([n,s]) =>
-        `S${n}: ${total>0?Math.round(s/total*100):0}% (${Math.round(s/60)}min)`
-      ).join(', ');
+    if (zoneStats) {
+      zoneStr = Object.entries(zoneStats).map(([zone, {pct, mins}]) => `${zone}: ${pct}% (${mins}min)`).join(', ');
     }
 
     const userPrompt = `Aktywność do analizy:

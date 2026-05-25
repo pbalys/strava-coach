@@ -606,14 +606,21 @@ async function openActivity(id, name, type) {
       setTimeout(() => drawHRChart(canvas, hrData, timeData), 50);
     }
 
-    // AI analysis
+    // AI analysis — pass pre-calculated zones (full data) instead of raw stream slices
+    const zoneStats = hasHR ? (() => {
+      const {counts, total} = calcZonesFromStreams(hrData, timeData);
+      return ZONES.reduce((acc, z) => {
+        acc['S'+z.n] = { pct: total > 0 ? Math.round(counts[z.n]/total*100) : 0, mins: Math.round(counts[z.n]/60) };
+        return acc;
+      }, {});
+    })() : null;
+
     try {
       const analysis = await apiFetch('/api/analyze', {
         activities: [detail],
         weekActs: [detail],
         singleActivity: true,
-        hrData: hasHR ? hrData.slice(0, 500) : [],
-        timeData: hasHR ? timeData.slice(0, 500) : []
+        zoneStats
       });
       document.getElementById('actAnalysis').className = 'act-analysis';
       document.getElementById('actAnalysis').innerHTML = mdToHtml(analysis.activity_analysis || analysis.summary || 'Brak analizy.');
