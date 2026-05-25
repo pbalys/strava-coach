@@ -373,7 +373,12 @@ function renderStats(acts){
   const rides=acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide');
   const dist=rides.reduce((s,a)=>s+a.distance,0),time=rides.reduce((s,a)=>s+a.moving_time,0),elev=rides.reduce((s,a)=>s+(a.total_elevation_gain||0),0);
   const pws=rides.filter(a=>a.type==='VirtualRide'&&a.average_watts).map(a=>a.average_watts),pw=pws.length?Math.round(pws.reduce((a,b)=>a+b)/pws.length):null;
-  return `
+  const d=n=>n<10?'0'+n:n;
+  const fmtD2=s=>{const dt=new Date(s);return `${d(dt.getDate())}.${d(dt.getMonth()+1)}`;};
+  const from=acts.length?fmtD2(acts[acts.length-1].start_date_local):'';
+  const to=acts.length?fmtD2(acts[0].start_date_local):'';
+  const rangeLabel=from&&to?` <span style="font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${from}–${to} (${acts.length} aktywności)</span>`:'';
+  return `<div class="section-title" style="margin-bottom:10px">Statystyki${rangeLabel}</div>
     <div class="stat-card"><div class="stat-label">Dystans</div><div class="stat-value">${(dist/1000).toFixed(0)}<span class="stat-unit">km</span></div></div>
     <div class="stat-card"><div class="stat-label">Czas w siodle</div><div class="stat-value">${Math.floor(time/3600)}<span class="stat-unit">h</span></div></div>
     <div class="stat-card"><div class="stat-label">Przewyższenie</div><div class="stat-value">${Math.round(elev)}<span class="stat-unit">m</span></div></div>
