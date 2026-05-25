@@ -56,8 +56,7 @@ export default async function handler(req, res) {
 - Dystans: ${a.distance>0?(a.distance/1000).toFixed(1)+' km':'—'}
 - Śr. HR: ${a.average_heartrate?Math.round(a.average_heartrate)+' BPM':'brak'}
 - Max HR: ${a.max_heartrate?Math.round(a.max_heartrate)+' BPM':'brak'}
-- Śr. moc: ${a.average_watts?Math.round(a.average_watts)+' W':'brak'}
-- Moc norm.: ${a.weighted_average_watts?a.weighted_average_watts+' W':'brak'}
+- Moc: ${a.type==='VirtualRide'&&a.average_watts?Math.round(a.weighted_average_watts||a.average_watts)+' W (trenazer)':'brak miernika'}
 - Urządzenie: ${a.device_name||'nieznane'}
 ${zoneStr?`- Rozkład stref: ${zoneStr}`:''}
 
@@ -85,7 +84,7 @@ Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu
     distance_km: a.distance > 0 ? (a.distance/1000).toFixed(1) : '0',
     avg_hr: a.average_heartrate ? Math.round(a.average_heartrate) : null,
     max_hr: a.max_heartrate ? Math.round(a.max_heartrate) : null,
-    avg_watts: a.average_watts ? Math.round(a.average_watts) : null,
+    avg_watts: (a.type==='VirtualRide' && a.average_watts) ? Math.round(a.average_watts) : null,
     device: a.device_name
   }));
 
@@ -94,7 +93,7 @@ Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu
     duration_min: Math.round(a.moving_time/60),
     distance_km: a.distance > 0 ? (a.distance/1000).toFixed(1) : '0',
     avg_hr: a.average_heartrate ? Math.round(a.average_heartrate) : null,
-    avg_watts: a.average_watts ? Math.round(a.average_watts) : null,
+    avg_watts: (a.type==='VirtualRide' && a.average_watts) ? Math.round(a.average_watts) : null,
     device: a.device_name
   }));
 

@@ -295,7 +295,7 @@ function renderWeek(weekActs){
 function renderStats(acts){
   const rides=acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide');
   const dist=rides.reduce((s,a)=>s+a.distance,0),time=rides.reduce((s,a)=>s+a.moving_time,0),elev=rides.reduce((s,a)=>s+(a.total_elevation_gain||0),0);
-  const pws=rides.filter(a=>a.average_watts).map(a=>a.average_watts),pw=pws.length?Math.round(pws.reduce((a,b)=>a+b)/pws.length):null;
+  const pws=rides.filter(a=>a.type==='VirtualRide'&&a.average_watts).map(a=>a.average_watts),pw=pws.length?Math.round(pws.reduce((a,b)=>a+b)/pws.length):null;
   return `
     <div class="stat-card"><div class="stat-label">Dystans</div><div class="stat-value">${(dist/1000).toFixed(0)}<span class="stat-unit">km</span></div></div>
     <div class="stat-card"><div class="stat-label">Czas w siodle</div><div class="stat-value">${Math.floor(time/3600)}<span class="stat-unit">h</span></div></div>
@@ -315,7 +315,7 @@ function renderActs(){
         <span>📅 ${fmtDate(a.start_date_local)}</span><span>⏱ ${fmt(a.moving_time)}</span>
         ${a.average_heartrate?`<span>❤️ ${Math.round(a.average_heartrate)} BPM</span>`:''}
         ${a.max_heartrate?`<span>🔴 max ${Math.round(a.max_heartrate)}</span>`:''}
-        ${a.average_watts?`<span>⚡ ${Math.round(a.average_watts)}W</span>`:''}
+        ${a.type==='VirtualRide'&&a.average_watts?`<span>⚡ ${Math.round(a.average_watts)}W</span>`:''}
         ${a.total_elevation_gain?`<span>⛰ ${Math.round(a.total_elevation_gain)}m</span>`:''}
         ${z?`<span><span class="zone-tag ${z.cls}">${z.label}</span></span>`:''}
       </div></div>
@@ -326,7 +326,7 @@ function renderActs(){
 
 function estimateTSS(a) {
   const h = a.moving_time / 3600;
-  if (a.average_watts) {
+  if (a.type === 'VirtualRide' && a.average_watts) {
     const np = a.weighted_average_watts || a.average_watts;
     const IF = np / FTP;
     return Math.round(h * IF * IF * 100);
@@ -558,8 +558,9 @@ async function openActivity(id, name, type) {
       }
     }
     const cadenceVal = detail.average_cadence ? Math.round(detail.average_cadence * (isRun ? 2 : 1)) : null;
-    const normPower = detail.weighted_average_watts || null;
-    const powerLabel = normPower ? `${normPower} W` : (detail.average_watts ? `${Math.round(detail.average_watts)} W` : '—');
+    const hasRealPower = actType === 'VirtualRide';
+    const normPower = hasRealPower ? (detail.weighted_average_watts || null) : null;
+    const powerLabel = hasRealPower ? (normPower ? `${normPower} W` : (detail.average_watts ? `${Math.round(detail.average_watts)} W` : '—')) : '—';
     const powerTitle = normPower ? 'Moc norm.' : 'Śr. moc';
 
     let zoneHtml = '';
@@ -653,13 +654,13 @@ async function init(){
     const weekActs=getWeekActs(activities);
 
     setStatus('loading','Analiza AI w toku...');
-    let analysis=null;
+    let analysis=null, aiError=null;
     try{analysis=await apiFetch('/api/analyze',{activities,weekActs});}
-    catch(e){console.warn('AI failed:',e);}
+    catch(e){console.warn('AI failed:',e);aiError=e.message;}
 
     setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
     document.getElementById('main').innerHTML=`
-      ${analysis?renderCoach(analysis):'<div class="error-box">⚠️ Analiza AI niedostępna.</div>'}
+      ${analysis?renderCoach(analysis):`<div class="error-box">⚠️ Analiza AI niedostępna.${aiError?`<br><span style="font-size:10px;opacity:.7">${aiError.slice(0,200)}</span>`:''}</div>`}
       <div class="stats-row" style="display:grid">${renderStats(activities)}</div>
       <div class="panel" style="margin-bottom:16px">
         <div class="panel-title">Obciążenie treningowe · Fitness / Zmęczenie / Forma</div>
