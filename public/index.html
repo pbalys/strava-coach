@@ -271,22 +271,52 @@ function renderWeekList(weekActs){
 function renderZones(acts){
   const {counts,total}=calcZones(acts);
   if(!total) return '<p style="color:var(--muted);font-size:12px">Brak danych HR</p>';
-  return ZONES.map(z=>{
-    const pct=Math.round(counts[z.n]/total*100);
+  const p={};
+  ZONES.forEach(z=>{p[z.n]=Math.round(counts[z.n]/total*100);});
+  const s12=p[1]+p[2], s45=p[4]+p[5];
+  function pctColor(n){
+    if(n===1||n===2) return s12>=80?'var(--green)':s12>=65?'var(--yellow)':'var(--red)';
+    if(n===3) return p[3]<=5?'var(--green)':p[3]<=10?'#ffa500':'var(--red)';
+    return (s45>=15&&s45<=22)?'var(--green)':s45>=8?'var(--yellow)':'var(--muted)';
+  }
+  function targetMark(n){
+    if(n===3) return `<div style="position:absolute;top:0;bottom:0;left:5%;width:2px;background:#ffffff30;border-radius:1px"></div>`;
+    if(n===4) return `<div style="position:absolute;top:0;bottom:0;left:15%;width:2px;background:#ffffff30;border-radius:1px"></div><div style="position:absolute;top:0;bottom:0;left:20%;width:2px;background:#ffffff30;border-radius:1px"></div>`;
+    if(n===2) return `<div style="position:absolute;top:0;bottom:0;left:80%;width:2px;background:#ffffff30;border-radius:1px"></div>`;
+    return '';
+  }
+  const rows=ZONES.map(z=>{
+    const pct=p[z.n];
     return `<div class="zone-row zone-s${z.n}">
       <div class="zone-name">${z.label}</div>
-      <div class="zone-bar-bg"><div class="zone-bar" style="width:${pct}%"></div></div>
-      <div class="zone-pct">${pct}%</div>
+      <div class="zone-bar-bg" style="position:relative">${targetMark(z.n)}<div class="zone-bar" style="width:${pct}%"></div></div>
+      <div class="zone-pct" style="color:${pctColor(z.n)}">${pct}%</div>
     </div>`;
   }).join('');
+  const s12c=s12>=80?'var(--green)':s12>=65?'var(--yellow)':'var(--red)';
+  const s3c=p[3]<=5?'var(--green)':p[3]<=10?'#ffa500':'var(--red)';
+  const s45c=(s45>=15&&s45<=22)?'var(--green)':s45>=8?'var(--yellow)':'var(--muted)';
+  return rows+`<div style="margin-top:10px;display:flex;gap:12px;font-size:11px;flex-wrap:wrap">
+    <span>S1+S2 <strong style="color:${s12c}">${s12}%</strong> <span style="color:var(--muted)">(cel ≥80%)</span></span>
+    <span>S3 <strong style="color:${s3c}">${p[3]}%</strong> <span style="color:var(--muted)">(cel ≤5%)</span></span>
+    <span>S4+S5 <strong style="color:${s45c}">${s45}%</strong> <span style="color:var(--muted)">(cel 15-20%)</span></span>
+  </div>`;
 }
 
 function renderWeek(weekActs){
   const names=['Nd','Pn','Wt','Śr','Cz','Pt','Sb'];
   const todayDow=new Date().getDay();
+  const today=new Date();
+  const monday=new Date(today);
+  monday.setDate(today.getDate()-((today.getDay()+6)%7));
+  monday.setHours(0,0,0,0);
+  const offsets=[6,0,1,2,3,4,5]; // Nd..Sb offset from Monday
   const byDay={};
   weekActs.forEach(a=>{const d=new Date(a.start_date_local).getDay();if(!byDay[d])byDay[d]=[];byDay[d].push(a);});
   return names.map((name,dow)=>{
+    const dayDate=new Date(monday);
+    dayDate.setDate(monday.getDate()+offsets[dow]);
+    const dateStr=dayDate.getDate()+'.'+String(dayDate.getMonth()+1).padStart(2,'0');
     const isPast=dow<=todayDow,isPlanned=PLAN[dow],hasAct=byDay[dow]&&byDay[dow].length>0;
     const isRide=byDay[dow]&&byDay[dow].some(a=>a.type==='Ride'||a.type==='VirtualRide');
     let cls='rest',dayIcon='—',label='';
@@ -295,7 +325,7 @@ function renderWeek(weekActs){
       else if(isPast){cls='missed';dayIcon='❌';label=isPlanned==='intervals'?'Interwały?':isPlanned==='easy'?'S2?':'Długa?';}
       else{cls='planned';dayIcon='📋';label=isPlanned==='intervals'?'Interwały':isPlanned==='easy'?'S2':'Długa';}
     } else if(hasAct){cls='done';dayIcon=ico(byDay[dow][0].type);label='Aktywność';}
-    return `<div class="day-cell ${cls}"><div class="day-name">${name}</div><div class="day-icon">${dayIcon}</div><div class="day-label">${label}</div></div>`;
+    return `<div class="day-cell ${cls}"><div class="day-name">${name}</div><div style="font-size:8px;color:var(--muted);margin-bottom:2px">${dateStr}</div><div class="day-icon">${dayIcon}</div><div class="day-label">${label}</div></div>`;
   }).join('');
 }
 
@@ -682,7 +712,7 @@ async function init(){
         </div>
       </div>
       <div class="two-col">
-        <div class="panel"><div class="panel-title">Rozkład stref HR (rower)</div>${renderZones(activities)}<div style="margin-top:12px;font-size:10px;color:var(--muted)">Cel: S1+S2 ≥80%, S3 ≤5%, S4+S5 ~15-20%</div></div>
+        <div class="panel"><div class="panel-title">Rozkład stref HR (rower)</div>${renderZones(activities)}</div>
         <div class="panel"><div class="panel-title">Plan tygodnia</div><div class="week-grid">${renderWeek(weekActs)}</div><div style="margin-top:12px;font-size:10px;color:var(--muted)">🟠 Zaplanowany  🟢 Wykonany  🔴 Pominięty</div></div>
       </div>
       <div class="section-title">Ostatnie aktywności</div>
