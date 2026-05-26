@@ -801,8 +801,8 @@ async function init(){
     setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
     document.getElementById('main').innerHTML=`
       ${analysis?`<div class="section-title">Ocena tygodnia <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${last7RangeStr()}</span></div>${renderScores(analysis)}`:''}
-      <div class="section-title">Ten tydzień <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
-      <div class="activity-list" style="margin-bottom:20px">${renderWeekList(weekActs)}</div>
+      <div class="section-title">Ostatnie 7 dni <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${last7RangeStr()}</span></div>
+      <div class="activity-list" style="margin-bottom:20px">${renderWeekList(last7Acts)}</div>
       ${analysis?renderCoachPanel(analysis):`<div class="error-box" style="margin-bottom:20px">⚠️ Analiza AI niedostępna.${aiError?`<br><span style="font-size:10px;opacity:.7">${aiError.slice(0,200)}</span>`:''}</div>`}
       <div class="panel" style="margin-bottom:16px">
         <div class="panel-title">Plan tygodnia <span style="font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
