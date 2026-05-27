@@ -772,80 +772,92 @@ window.loadMore=async()=>{
   catch(e){btn.textContent='Błąd';btn.disabled=false;}
 };
 
+const AI_CACHE_KEY='weekly_ai_v1';
+const AI_CACHE_TTL=30*60*1000;
+function getCachedAnalysis(){try{const c=JSON.parse(localStorage.getItem(AI_CACHE_KEY)||'null');if(c&&Date.now()-c.ts<AI_CACHE_TTL)return c.data;}catch(e){}return null;}
+function setCachedAnalysis(d){try{localStorage.setItem(AI_CACHE_KEY,JSON.stringify({ts:Date.now(),data:d}));}catch(e){}}
+
+function renderMain(weekActs,last7Acts,analysis,accZones,aiError){
+  document.getElementById('main').innerHTML=`
+    ${analysis?`<div class="section-title">Ocena tygodnia <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${last7RangeStr()}</span></div>${renderScores(analysis)}`:''}
+    <div class="section-title">Ostatnie 7 dni <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${last7RangeStr()}</span></div>
+    <div class="activity-list" style="margin-bottom:20px">${renderWeekList(last7Acts)}</div>
+    ${analysis?renderCoachPanel(analysis):`<div class="error-box" style="margin-bottom:20px">⚠️ Analiza AI niedostępna.${aiError?`<br><span style="font-size:10px;opacity:.7">${aiError.slice(0,200)}</span>`:''}</div>`}
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-title">Plan tygodnia <span style="font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
+      <div class="week-grid">${renderWeek(weekActs)}</div>
+      <div style="margin-top:10px;font-size:10px;color:var(--muted);display:flex;gap:14px">
+        <span>🟠 Zaplanowany</span><span>🟢 Wykonany</span><span>🔴 Pominięty</span>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-title">Strefy HR – ${last7RangeStr()}</div>${renderZones(activities,accZones)}</div>
+      <div class="panel">
+        <div class="panel-title">Obciążenie treningowe</div>
+        <canvas id="loadChart" style="width:100%;height:130px;display:block"></canvas>
+        <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;flex-wrap:wrap;align-items:center">
+          <span style="color:#4da6ff">● Fitness <strong id="ctlVal">—</strong></span>
+          <span style="color:#FF6B35">● Zmęczenie <strong id="atlVal">—</strong></span>
+          <span id="tsbBadge" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">Forma: <span id="tsbVal">—</span></span>
+        </div>
+      </div>
+    </div>
+    ${renderStatsTitle(activities)}
+    <div class="stats-row">${renderStats(activities)}</div>
+    <div class="section-title">Ostatnie aktywności</div>
+    <div class="filter-row">
+      <button class="filter-btn active" data-f="all" onclick="setFilter('all')">Wszystkie</button>
+      <button class="filter-btn" data-f="ride" onclick="setFilter('ride')">🚴 Rower</button>
+      <button class="filter-btn" data-f="run" onclick="setFilter('run')">🏃 Bieg</button>
+    </div>
+    <div class="activity-list" id="actList">${renderActs()}</div>
+    <button class="load-more" id="lmBtn" onclick="loadMore()">Załaduj więcej</button>`;
+  const loadData=calcTrainingLoad(activities);
+  const td=loadData[loadData.length-1];
+  document.getElementById('ctlVal').textContent=Math.round(td.ctl);
+  document.getElementById('atlVal').textContent=Math.round(td.atl);
+  const tsb=Math.round(td.tsb*10)/10,tsbSign=tsb>0?'+':'';
+  const badge=document.getElementById('tsbBadge');
+  document.getElementById('tsbVal').textContent=tsbSign+tsb;
+  if(tsb>10){badge.style.cssText+=';background:#0a2a0a;color:#00d4aa';badge.firstChild.textContent='Świeży ';}
+  else if(tsb>-10){badge.style.cssText+=';background:#2a2000;color:#f5c518';badge.firstChild.textContent='Neutralny ';}
+  else if(tsb>-25){badge.style.cssText+=';background:#2a1200;color:#ffa500';badge.firstChild.textContent='Zmęczony ';}
+  else{badge.style.cssText+=';background:#2a0808;color:#ff4444';badge.firstChild.textContent='Przeciążony ';}
+  setTimeout(()=>drawLoadChart(document.getElementById('loadChart'),loadData),50);
+}
+
 async function init(){
   try{
     setStatus('loading','Łączenie ze Stravą...');
-    const [athleteData, actsData] = await Promise.all([
-      apiFetch('/api/athlete'),
-      apiFetch('/api/activities?page=1')
-    ]);
+    const [athleteData,actsData]=await Promise.all([apiFetch('/api/athlete'),apiFetch('/api/activities?page=1')]);
     document.getElementById('athleteName').textContent=athleteData.firstname+' '+athleteData.lastname;
     activities=actsData||[];
     const weekActs=getWeekActs(activities);
     const last7Acts=getLast7Acts(activities);
-
-    setStatus('loading','Pobieranie stref HR...');
     const rideIds=last7Acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide').map(a=>a.id);
+
+    // Zones are fast (cached per activity in localStorage)
+    setStatus('loading','Pobieranie stref HR...');
     const accZones=await fetchAccurateZones(rideIds);
 
-    setStatus('loading','Analiza AI w toku...');
-    let analysis=null, aiError=null;
-    const weekZonePcts = accZones ? (() => {
-      const o={};
-      ZONES.forEach(z=>{o['S'+z.n]={pct:Math.round(accZones.counts[z.n]/accZones.total*100),mins:Math.round(accZones.counts[z.n]/60)};});
-      return o;
-    })() : null;
-    try{analysis=await apiFetch('/api/analyze',{activities,weekActs:last7Acts,weekZonePcts});}
-    catch(e){console.warn('AI failed:',e);aiError=e.message;}
+    // Render immediately with cached AI — user sees full dashboard now
+    const cachedAnalysis=getCachedAnalysis();
+    renderMain(weekActs,last7Acts,cachedAnalysis,accZones,null);
+    setStatus('ok',(cachedAnalysis?'Połączono ✓':'Połączono ✓ – ')+' | '+new Date().toLocaleTimeString('pl-PL'));
 
-    setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
-    document.getElementById('main').innerHTML=`
-      ${analysis?`<div class="section-title">Ocena tygodnia <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${last7RangeStr()}</span></div>${renderScores(analysis)}`:''}
-      <div class="section-title">Ostatnie 7 dni <span style="font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${last7RangeStr()}</span></div>
-      <div class="activity-list" style="margin-bottom:20px">${renderWeekList(last7Acts)}</div>
-      ${analysis?renderCoachPanel(analysis):`<div class="error-box" style="margin-bottom:20px">⚠️ Analiza AI niedostępna.${aiError?`<br><span style="font-size:10px;opacity:.7">${aiError.slice(0,200)}</span>`:''}</div>`}
-      <div class="panel" style="margin-bottom:16px">
-        <div class="panel-title">Plan tygodnia <span style="font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
-        <div class="week-grid">${renderWeek(weekActs)}</div>
-        <div style="margin-top:10px;font-size:10px;color:var(--muted);display:flex;gap:14px">
-          <span>🟠 Zaplanowany</span><span>🟢 Wykonany</span><span>🔴 Pominięty</span>
-        </div>
-      </div>
-      <div class="two-col">
-        <div class="panel"><div class="panel-title">Strefy HR – ${last7RangeStr()}</div>${renderZones(activities, accZones)}</div>
-        <div class="panel">
-          <div class="panel-title">Obciążenie treningowe</div>
-          <canvas id="loadChart" style="width:100%;height:130px;display:block"></canvas>
-          <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;flex-wrap:wrap;align-items:center">
-            <span style="color:#4da6ff">● Fitness <strong id="ctlVal">—</strong></span>
-            <span style="color:#FF6B35">● Zmęczenie <strong id="atlVal">—</strong></span>
-            <span id="tsbBadge" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">Forma: <span id="tsbVal">—</span></span>
-          </div>
-        </div>
-      </div>
-      ${renderStatsTitle(activities)}
-      <div class="stats-row">${renderStats(activities)}</div>
-      <div class="section-title">Ostatnie aktywności</div>
-      <div class="filter-row">
-        <button class="filter-btn active" data-f="all" onclick="setFilter('all')">Wszystkie</button>
-        <button class="filter-btn" data-f="ride" onclick="setFilter('ride')">🚴 Rower</button>
-        <button class="filter-btn" data-f="run" onclick="setFilter('run')">🏃 Bieg</button>
-      </div>
-      <div class="activity-list" id="actList">${renderActs()}</div>
-      <button class="load-more" id="lmBtn" onclick="loadMore()">Załaduj więcej</button>`;
-    const loadData = calcTrainingLoad(activities);
-    const td = loadData[loadData.length - 1];
-    document.getElementById('ctlVal').textContent = Math.round(td.ctl);
-    document.getElementById('atlVal').textContent = Math.round(td.atl);
-    const tsb = Math.round(td.tsb * 10) / 10;
-    const tsbSign = tsb > 0 ? '+' : '';
-    const badge = document.getElementById('tsbBadge');
-    document.getElementById('tsbVal').textContent = tsbSign + tsb;
-    if (tsb > 10)       { badge.style.cssText += ';background:#0a2a0a;color:#00d4aa'; badge.firstChild.textContent = 'Świeży '; }
-    else if (tsb > -10) { badge.style.cssText += ';background:#2a2000;color:#f5c518'; badge.firstChild.textContent = 'Neutralny '; }
-    else if (tsb > -25) { badge.style.cssText += ';background:#2a1200;color:#ffa500'; badge.firstChild.textContent = 'Zmęczony '; }
-    else                { badge.style.cssText += ';background:#2a0808;color:#ff4444'; badge.firstChild.textContent = 'Przeciążony '; }
-    setTimeout(() => drawLoadChart(document.getElementById('loadChart'), loadData), 50);
+    // Refresh AI in background — update scores/coach panel silently when done
+    const weekZonePcts=accZones?(()=>{const o={};ZONES.forEach(z=>{o['S'+z.n]={pct:Math.round(accZones.counts[z.n]/accZones.total*100),mins:Math.round(accZones.counts[z.n]/60)};});return o;})():null;
+    apiFetch('/api/analyze',{activities,weekActs:last7Acts,weekZonePcts})
+      .then(fresh=>{
+        setCachedAnalysis(fresh);
+        renderMain(weekActs,last7Acts,fresh,accZones,null);
+        setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
+      })
+      .catch(e=>{
+        console.warn('AI refresh failed:',e);
+        if(!cachedAnalysis)renderMain(weekActs,last7Acts,null,accZones,e.message);
+        setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
+      });
   }catch(e){
     setStatus('err','Błąd');
     document.getElementById('main').innerHTML=`<div class="error-box">❌ <strong>Błąd:</strong> ${e.message}</div>`;
