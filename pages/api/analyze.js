@@ -62,7 +62,8 @@ export default async function handler(req, res) {
 - Urządzenie: ${a.device_name||'nieznane'}
 ${zoneStr?`- Rozkład stref: ${zoneStr}`:''}
 
-Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu, co konkretnie zrobił dobrze i co poprawić. Bez wstępu, bez powtarzania danych.`;
+Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu, co konkretnie zrobił dobrze i co poprawić. Bez wstępu, bez powtarzania danych.
+WAŻNE przy interwałach: oceniaj strukturę treningu (piki HR), nie tylko średnią HR. Jeśli max HR > 156 BPM i trening ma rozkład stref z czasem w S4/S5, to jest to dobry trening interwałowy nawet jeśli średnia HR wynosi 130-135 BPM (bo przerwy między interwałami obniżają średnią). Avg HR 130 + max HR 170 + S4: 20% = klasyczny interwałowy, nie łatwy.`;
 
     try {
       const text = await callClaude(userPrompt, 220);
