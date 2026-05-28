@@ -346,6 +346,12 @@ function renderWeek(weekActs){
     const rideAct=acts.find(a=>a.type==='Ride'||a.type==='VirtualRide');
     const anyAct=acts[0];
     let cls='rest',dayIcon='—',label='',statsHtml='';
+    const actRow=a=>{
+      const dist=a.distance>0?`${(a.distance/1000).toFixed(0)} km`:'';
+      const time=fmt(a.moving_time);
+      const hr=a.average_heartrate?` ❤️${Math.round(a.average_heartrate)}`:'';
+      return `<div class="day-stats" style="font-size:9px;margin-top:3px">${ico(a.type)} ${a.name.slice(0,13)}<br>${[dist,time].filter(Boolean).join(' · ')}${hr}</div>`;
+    };
     if(isPlanned){
       if(rideAct){
         cls='done';dayIcon=ico(rideAct.type);
@@ -354,6 +360,11 @@ function renderWeek(weekActs){
         const time=fmt(rideAct.moving_time);
         const hr=rideAct.average_heartrate?`❤️ ${Math.round(rideAct.average_heartrate)}`:'';
         statsHtml=`<div class="day-stats">${dist?dist+'<br>':''}${time}${hr?'<br>'+hr:''}</div>`;
+        acts.filter(a=>a!==rideAct).forEach(a=>{statsHtml+=actRow(a);});
+      } else if(acts.length){
+        cls='done';dayIcon=ico(acts[0].type);
+        label=isPlanned==='intervals'?'Interwały ✓':isPlanned==='easy'?'S2 ✓':'Długa ✓';
+        statsHtml=acts.map(actRow).join('');
       } else if(isPast){
         cls='missed';dayIcon='❌';
         label=isPlanned==='intervals'?'Interwały':isPlanned==='easy'?'S2':'Długa';
@@ -362,12 +373,9 @@ function renderWeek(weekActs){
         cls='planned';dayIcon='📋';
         label=isPlanned==='intervals'?'Interwały':isPlanned==='easy'?'Łatwa S2':'Długa S2';
       }
-    } else if(anyAct){
-      cls='done';dayIcon=ico(anyAct.type);label='';
-      const dist=anyAct.distance>0?`${(anyAct.distance/1000).toFixed(0)} km`:'';
-      const time=fmt(anyAct.moving_time);
-      const hr=anyAct.average_heartrate?`❤️ ${Math.round(anyAct.average_heartrate)}`:'';
-      statsHtml=`<div class="day-stats">${anyAct.name.slice(0,14)}<br>${dist?dist+' · ':''}${time}${hr?'<br>'+hr:''}</div>`;
+    } else if(acts.length){
+      cls='done';dayIcon=ico(acts[0].type);label='';
+      statsHtml=acts.map(actRow).join('');
     }
     return `<div class="day-cell ${cls}">
       <div class="day-name">${name}</div>
