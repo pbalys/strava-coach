@@ -71,7 +71,7 @@
   .zone-s5 .zone-bar{background:var(--red);} .zone-s5 .zone-name{color:var(--red);}
 
   /* Week */
-  .week-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:8px; }
+  .week-grid { display:grid;grid-template-columns:repeat(6,1fr);gap:8px; }
   .day-cell { background:var(--mid);border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;min-height:110px;display:flex;flex-direction:column; }
   .day-name { font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700; }
   .day-date { font-size:11px;color:var(--muted);margin-bottom:6px; }
@@ -328,21 +328,23 @@ function renderZones(acts, accZones){
 }
 
 function renderWeek(weekActs){
-  const names=['Nd','Pn','Wt','Śr','Cz','Pt','Sb'];
-  const todayDow=new Date().getDay();
+  // Mon=1..Sat=6 in JS getDay(); show Mon-Sat only (no Sunday)
+  const names=['Pn','Wt','Śr','Cz','Pt','Sb'];
+  const jsDays=[1,2,3,4,5,6];
   const today=new Date();
+  const todayStart=new Date(today);todayStart.setHours(0,0,0,0);
   const monday=new Date(today);
   monday.setDate(today.getDate()-((today.getDay()+6)%7));
   monday.setHours(0,0,0,0);
-  const offsets=[6,0,1,2,3,4,5];
   const byDay={};
   weekActs.forEach(a=>{const d=new Date(a.start_date_local).getDay();if(!byDay[d])byDay[d]=[];byDay[d].push(a);});
-  return names.map((name,dow)=>{
+  return names.map((name,i)=>{
+    const jsDay=jsDays[i];
     const dayDate=new Date(monday);
-    dayDate.setDate(monday.getDate()+offsets[dow]);
+    dayDate.setDate(monday.getDate()+i);
     const dateStr=dayDate.getDate()+'.'+String(dayDate.getMonth()+1).padStart(2,'0');
-    const isPast=dow<=todayDow,isPlanned=PLAN[dow],hasAct=byDay[dow]&&byDay[dow].length>0;
-    const acts=byDay[dow]||[];
+    const isPast=dayDate<todayStart,isPlanned=PLAN[jsDay];
+    const acts=byDay[jsDay]||[];
     const rideAct=acts.find(a=>a.type==='Ride'||a.type==='VirtualRide');
     const anyAct=acts[0];
     let cls='rest',dayIcon='—',label='',statsHtml='';
