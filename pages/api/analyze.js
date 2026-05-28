@@ -50,20 +50,24 @@ export default async function handler(req, res) {
 
     const DAY_PL_SA = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
     const dayName = DAY_PL_SA[new Date(a.start_date_local).getDay()];
+    const durationMin = Math.round(a.moving_time/60);
+    const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : null;
+    const isInterval = durationMin < 90 && maxHr && maxHr > 156;
+
     const userPrompt = `Aktywność do analizy:
 - Nazwa: ${a.name}
 - Typ: ${a.type}
 - Data: ${a.start_date_local} (${dayName})
-- Czas: ${Math.round(a.moving_time/60)} min
+- Czas: ${durationMin} min
 - Dystans: ${a.distance>0?(a.distance/1000).toFixed(1)+' km':'—'}
-- Śr. HR: ${a.average_heartrate?Math.round(a.average_heartrate)+' BPM':'brak'}
-- Max HR: ${a.max_heartrate?Math.round(a.max_heartrate)+' BPM':'brak'}
+${isInterval ? '' : `- Śr. HR: ${a.average_heartrate?Math.round(a.average_heartrate)+' BPM':'brak'}\n`}- Max HR: ${maxHr?maxHr+' BPM':'brak'}
 - Moc: ${a.type==='VirtualRide'&&a.average_watts?Math.round(a.weighted_average_watts||a.average_watts)+' W (trenazer)':'brak miernika'}
 - Urządzenie: ${a.device_name||'nieznane'}
-${zoneStr?`- Rozkład stref: ${zoneStr}`:''}
+${zoneStr?`- Rozkład stref (dane sekundowe): ${zoneStr}`:''}
+${isInterval?'- TYP: TRENING INTERWAŁOWY — oceniaj TYLKO po max_hr i % czasu w S4+S5, NIE po avg_hr':''}
 
 Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu, co konkretnie zrobił dobrze i co poprawić. Bez wstępu, bez powtarzania danych.
-WAŻNE przy interwałach: oceniaj strukturę treningu (piki HR), nie tylko średnią HR. Jeśli max HR > 156 BPM i trening ma rozkład stref z czasem w S4/S5, to jest to dobry trening interwałowy nawet jeśli średnia HR wynosi 130-135 BPM (bo przerwy między interwałami obniżają średnią). Avg HR 130 + max HR 170 + S4: 20% = klasyczny interwałowy, nie łatwy.`;
+WAŻNE: Przy treningu interwałowym (krótki czas <90min, max_hr >156) niska średnia HR (120-140) jest NORMALNA i OCZEKIWANA - to efekt przerw regeneracyjnych. Oceniaj interwały TYLKO po: max_hr, % czasu w S4+S5, i strukturze treningu.`;
 
     try {
       const text = await callClaude(userPrompt, 400);
@@ -76,25 +80,33 @@ WAŻNE przy interwałach: oceniaj strukturę treningu (piki HR), nie tylko śred
   // Weekly analysis — NOTE: no zone distribution from avg_hr (misleading — avg_hr 142 = all time in S3,
   // hiding real S4/S5 spikes visible only in second-by-second stream data). Use avg_hr + max_hr per activity.
   const DAY_PL = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
-  const actSummary = (acts, n) => acts.slice(0, n).map(a => ({
-    name: a.name, type: a.type,
-    date: a.start_date_local,
-    day: DAY_PL[new Date(a.start_date_local).getDay()],
-    duration_min: Math.round(a.moving_time/60),
-    distance_km: a.distance > 0 ? (a.distance/1000).toFixed(1) : '0',
-    avg_hr: a.average_heartrate ? Math.round(a.average_heartrate) : null,
-    max_hr: a.max_heartrate ? Math.round(a.max_heartrate) : null,
-    avg_watts: (a.type==='VirtualRide' && a.average_watts) ? Math.round(a.average_watts) : null,
-    device: a.device_name
-  }));
+  const actSummary = (acts, n) => acts.slice(0, n).map(a => {
+    const durMin = Math.round(a.moving_time/60);
+    const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : null;
+    const isInterval = durMin < 90 && maxHr && maxHr > 156;
+    return {
+      name: a.name, type: a.type,
+      date: a.start_date_local,
+      day: DAY_PL[new Date(a.start_date_local).getDay()],
+      duration_min: durMin,
+      distance_km: a.distance > 0 ? (a.distance/1000).toFixed(1) : '0',
+      // avg_hr excluded for interval sessions — misleadingly low due to recovery intervals
+      ...(isInterval ? {avg_hr_NOTE:'interval_session_avg_hr_irrelevant'} : {avg_hr: a.average_heartrate ? Math.round(a.average_heartrate) : null}),
+      max_hr: maxHr,
+      is_interval: isInterval || undefined,
+      avg_watts: (a.type==='VirtualRide' && a.average_watts) ? Math.round(a.average_watts) : null,
+      device: a.device_name
+    };
+  });
 
   const today = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
 
   const zonesLine = weekZonePcts
-    ? `ROZKŁAD STREF HR ten tydzień (dane sekundowe, dokładne): ${JSON.stringify(weekZonePcts)}`
-    : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr to tylko średnia, nie odzwierciedla pików S4/S5.`;
+    ? `ROZKŁAD STREF HR ostatnie 7 dni (dane sekundowe, dokładne — używaj do oceny polaryzacji): ${JSON.stringify(weekZonePcts)}`
+    : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr to tylko średnia i jest NIEUŻYTECZNA dla oceny polaryzacji przy treningach interwałowych.`;
 
   const userPrompt = `${zonesLine}
+ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna — niska średnia HR (120-140) jest NORMALNA bo przerwy regeneracyjne zaniżają średnią. Polaryzację oceniaj WYŁĄCZNIE na podstawie danych sekundowych stref (powyżej), NIE na podstawie avg_hr z poszczególnych aktywności.
 TEN TYDZIEŃ: ${JSON.stringify(actSummary(weekActs||[], 20))}
 OSTATNIE 10 AKTYWNOŚCI: ${JSON.stringify(actSummary(activities, 10))}
 Dziś: ${today}
