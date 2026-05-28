@@ -844,7 +844,7 @@ async function init(){
     document.getElementById('athleteName').textContent=athleteData.firstname+' '+athleteData.lastname;
     activities=actsData||[];
     const weekActs=getWeekActs(activities);
-    const last7Acts=getLast7Acts(activities);
+    const last7Acts=getLast7Acts(activities).filter(a=>a.moving_time>=15*60);
     const rideIds=last7Acts.filter(a=>a.type==='Ride'||a.type==='VirtualRide').map(a=>a.id);
 
     // Zones are fast (cached per activity in localStorage)
