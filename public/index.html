@@ -349,18 +349,17 @@ function renderWeek(weekActs){
     const actRow=a=>{
       const dist=a.distance>0?`${(a.distance/1000).toFixed(0)} km`:'';
       const time=fmt(a.moving_time);
-      const hr=a.average_heartrate?` ❤️${Math.round(a.average_heartrate)}`:'';
-      return `<div class="day-stats" style="font-size:9px;margin-top:3px">${ico(a.type)} ${a.name.slice(0,13)}<br>${[dist,time].filter(Boolean).join(' · ')}${hr}</div>`;
+      const hr=a.average_heartrate?`❤️${Math.round(a.average_heartrate)}`:'';
+      return `<div class="day-stats" style="font-size:9px;margin-top:4px;padding-top:4px;border-top:1px solid #ffffff10">
+        <span style="opacity:.7">${ico(a.type)}</span> <strong style="font-size:9px">${a.name.slice(0,14)}</strong><br>
+        <span style="color:var(--muted)">${[dist,time,hr].filter(Boolean).join(' · ')}</span>
+      </div>`;
     };
     if(isPlanned){
       if(rideAct){
         cls='done';dayIcon=ico(rideAct.type);
         label=isPlanned==='intervals'?'Interwały ✓':isPlanned==='easy'?'S2 ✓':'Długa ✓';
-        const dist=rideAct.distance>0?`${(rideAct.distance/1000).toFixed(0)} km`:'';
-        const time=fmt(rideAct.moving_time);
-        const hr=rideAct.average_heartrate?`❤️ ${Math.round(rideAct.average_heartrate)}`:'';
-        statsHtml=`<div class="day-stats">${dist?dist+'<br>':''}${time}${hr?'<br>'+hr:''}</div>`;
-        acts.filter(a=>a!==rideAct).forEach(a=>{statsHtml+=actRow(a);});
+        statsHtml=acts.map(actRow).join('');
       } else if(acts.length){
         cls='done';dayIcon=ico(acts[0].type);
         label=isPlanned==='intervals'?'Interwały ✓':isPlanned==='easy'?'S2 ✓':'Długa ✓';
