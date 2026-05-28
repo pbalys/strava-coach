@@ -61,7 +61,7 @@
   /* Zone bars */
   .zone-row { display:flex;align-items:center;gap:10px;margin-bottom:8px; }
   .zone-name { font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;width:28px; }
-  .zone-bar-bg { flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden; }
+  .zone-bar-bg { flex:1;background:var(--border);border-radius:4px;height:10px;overflow:visible;position:relative; }
   .zone-bar { height:100%;border-radius:4px;transition:width .6s ease; }
   .zone-pct { font-size:11px;color:var(--muted);width:36px;text-align:right; }
   .zone-s1 .zone-bar{background:#4da6ff;} .zone-s1 .zone-name{color:#4da6ff;}
@@ -304,9 +304,11 @@ function renderZones(acts, accZones){
     return (s45>=15&&s45<=22)?'var(--green)':s45>=8?'var(--yellow)':'var(--muted)';
   }
   function targetMark(n){
-    if(n===3) return `<div style="position:absolute;top:0;bottom:0;left:5%;width:2px;background:#ffffff30;border-radius:1px"></div>`;
-    if(n===4) return `<div style="position:absolute;top:0;bottom:0;left:15%;width:2px;background:#ffffff30;border-radius:1px"></div><div style="position:absolute;top:0;bottom:0;left:20%;width:2px;background:#ffffff30;border-radius:1px"></div>`;
-    if(n===2) return `<div style="position:absolute;top:0;bottom:0;left:80%;width:2px;background:#ffffff30;border-radius:1px"></div>`;
+    // Visible target markers: bright line + small label above
+    const mk=(pos,lbl)=>`<div style="position:absolute;top:-13px;bottom:0;left:${pos}%;width:2px;background:#ffffff70;border-radius:1px"><span style="position:absolute;top:0;left:3px;font-size:8px;color:#ffffff70;white-space:nowrap;line-height:1">${lbl}</span></div>`;
+    if(n===2) return mk(80,'80%');
+    if(n===3) return mk(5,'5%');
+    if(n===4) return mk(15,'15%')+mk(20,'20%');
     return '';
   }
   const rows=ZONES.map(z=>{
@@ -337,7 +339,7 @@ function renderWeek(weekActs){
   monday.setDate(today.getDate()-((today.getDay()+6)%7));
   monday.setHours(0,0,0,0);
   const byDay={};
-  weekActs.forEach(a=>{const d=new Date(a.start_date_local).getDay();if(!byDay[d])byDay[d]=[];byDay[d].push(a);});
+  weekActs.filter(a=>a.moving_time>=15*60).forEach(a=>{const d=new Date(a.start_date_local).getDay();if(!byDay[d])byDay[d]=[];byDay[d].push(a);});
   return names.map((name,i)=>{
     const jsDay=jsDays[i];
     const dayDate=new Date(monday);
@@ -500,7 +502,7 @@ function drawLoadChart(canvas, data) {
   canvas.width = w * dpr; canvas.height = h * dpr;
   ctx.scale(dpr, dpr);
 
-  const PAD = {top:12, right:12, bottom:28, left:36};
+  const PAD = {top:12, right:12, bottom:30, left:36};
   const cw = w - PAD.left - PAD.right, ch = h - PAD.top - PAD.bottom;
   const yMax = Math.max(...data.map(d => Math.max(d.ctl, d.atl)), 10) * 1.15;
 
@@ -545,10 +547,10 @@ function drawLoadChart(canvas, data) {
   ctx.setLineDash([]);
 
   // X labels
-  ctx.textAlign = 'center'; ctx.fillStyle = '#444'; ctx.font = `9px 'Barlow', sans-serif`;
+  ctx.textAlign = 'center'; ctx.fillStyle = '#888'; ctx.font = `10px 'Barlow', sans-serif`;
   data.forEach((d, i) => {
     if (i % 14 === 0 || i === data.length - 1)
-      ctx.fillText(new Date(d.d+'T12:00').toLocaleDateString('pl-PL',{day:'numeric',month:'short'}), xS(i), PAD.top+ch+16);
+      ctx.fillText(new Date(d.d+'T12:00').toLocaleDateString('pl-PL',{day:'numeric',month:'short'}), xS(i), PAD.top+ch+18);
   });
 }
 
@@ -807,6 +809,7 @@ function renderMain(weekActs,last7Acts,analysis,accZones,aiError){
           <span style="color:#4da6ff">● Fitness <strong id="ctlVal">—</strong></span>
           <span style="color:#FF6B35">● Zmęczenie <strong id="atlVal">—</strong></span>
           <span id="tsbBadge" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">Forma: <span id="tsbVal">—</span></span>
+          <span style="font-size:9px;color:#555">&gt;10 świeży · ±10 neutralny · -25 zmęczony · &lt;−25 przeciążony</span>
         </div>
       </div>
     </div>
