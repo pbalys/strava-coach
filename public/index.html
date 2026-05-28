@@ -804,8 +804,9 @@ function renderMain(weekActs,last7Acts,analysis,accZones,aiError){
         <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;flex-wrap:wrap;align-items:center">
           <span style="color:#4da6ff">● Fitness <strong id="ctlVal">—</strong></span>
           <span style="color:#FF6B35">● Zmęczenie <strong id="atlVal">—</strong></span>
-          <span id="tsbBadge" title="TSB (Training Stress Balance): >10 świeży · ±10 neutralny · poniżej -25 zmęczony · poniżej -25 przeciążony" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;cursor:help">Forma: <span id="tsbVal">—</span></span>
+          <span id="tsbBadge" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">Forma: <span id="tsbVal">—</span></span>
         </div>
+        <div id="tsbInterpret" style="margin-top:8px;font-size:11px;line-height:1.5;color:var(--muted);border-top:1px solid var(--border);padding-top:8px"></div>
       </div>
     </div>
     ${renderStatsTitle(activities)}
@@ -820,15 +821,22 @@ function renderMain(weekActs,last7Acts,analysis,accZones,aiError){
     <button class="load-more" id="lmBtn" onclick="loadMore()">Załaduj więcej</button>`;
   const loadData=calcTrainingLoad(activities);
   const td=loadData[loadData.length-1];
-  document.getElementById('ctlVal').textContent=Math.round(td.ctl);
-  document.getElementById('atlVal').textContent=Math.round(td.atl);
+  const ctl=Math.round(td.ctl),atl=Math.round(td.atl);
   const tsb=Math.round(td.tsb*10)/10,tsbSign=tsb>0?'+':'';
   const badge=document.getElementById('tsbBadge');
+  document.getElementById('ctlVal').textContent=ctl;
+  document.getElementById('atlVal').textContent=atl;
   document.getElementById('tsbVal').textContent=tsbSign+tsb;
-  if(tsb>10){badge.style.cssText+=';background:#0a2a0a;color:#00d4aa';badge.firstChild.textContent='Świeży ';}
-  else if(tsb>-10){badge.style.cssText+=';background:#2a2000;color:#f5c518';badge.firstChild.textContent='Neutralny ';}
-  else if(tsb>-25){badge.style.cssText+=';background:#2a1200;color:#ffa500';badge.firstChild.textContent='Zmęczony ';}
-  else{badge.style.cssText+=';background:#2a0808;color:#ff4444';badge.firstChild.textContent='Przeciążony ';}
+  let tsbColor,tsbLabel,tsbMsg;
+  if(tsb>10){tsbColor='#00d4aa';tsbLabel='Świeży';badge.style.cssText+=';background:#0a2a0a;color:#00d4aa';badge.firstChild.textContent='Świeży ';
+    tsbMsg=`TSB ${tsbSign}${tsb} — jesteś świeży i wypoczęty. Dobry moment na mocny trening lub start w zawodach.`;}
+  else if(tsb>-10){tsbColor='#f5c518';tsbLabel='Neutralny';badge.style.cssText+=';background:#2a2000;color:#f5c518';badge.firstChild.textContent='Neutralny ';
+    tsbMsg=`TSB ${tsbSign}${tsb} — forma neutralna, trening adaptuje się normalnie. Możesz trenować zgodnie z planem.`;}
+  else if(tsb>-25){tsbColor='#ffa500';tsbLabel='Zmęczony';badge.style.cssText+=';background:#2a1200;color:#ffa500';badge.firstChild.textContent='Zmęczony ';
+    tsbMsg=`TSB ${tsb} — wyraźne zmęczenie. Zmęczenie (${atl}) rośnie szybciej niż adaptacja (${ctl}). Zaplanuj dzień regeneracyjny przed kolejną mocną sesją.`;}
+  else{tsbColor='#ff4444';tsbLabel='Przeciążony';badge.style.cssText+=';background:#2a0808;color:#ff4444';badge.firstChild.textContent='Przeciążony ';
+    tsbMsg=`TSB ${tsb} — mocne przeciążenie. Zmęczenie (${atl}) jest ${atl-ctl} pkt powyżej bazy fitness (${ctl}). Priorytet: 3–4 dni spokojnego treningu lub odpoczynku zanim wrócisz do interwałów.`;}
+  document.getElementById('tsbInterpret').textContent=tsbMsg;
   setTimeout(()=>drawLoadChart(document.getElementById('loadChart'),loadData),50);
 }
 
@@ -853,7 +861,10 @@ async function init(){
 
     // Refresh AI in background — update scores/coach panel silently when done
     const weekZonePcts=accZones?(()=>{const o={};ZONES.forEach(z=>{o['S'+z.n]={pct:Math.round(accZones.counts[z.n]/accZones.total*100),mins:Math.round(accZones.counts[z.n]/60)};});return o;})():null;
-    apiFetch('/api/analyze',{activities,weekActs:last7Acts,weekZonePcts})
+    const loadData=calcTrainingLoad(activities);
+    const ltd=loadData[loadData.length-1];
+    const trainingLoad={ctl:Math.round(ltd.ctl),atl:Math.round(ltd.atl),tsb:Math.round(ltd.tsb*10)/10};
+    apiFetch('/api/analyze',{activities,weekActs:last7Acts,weekZonePcts,trainingLoad})
       .then(fresh=>{
         setCachedAnalysis(fresh);
         renderMain(weekActs,last7Acts,fresh,accZones,null);

@@ -30,7 +30,7 @@ async function callClaude(userPrompt, maxTokens) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { activities, weekActs, singleActivity, zoneStats, weekZonePcts } = req.body;
+  const { activities, weekActs, singleActivity, zoneStats, weekZonePcts, trainingLoad } = req.body;
 
   const ZONES = [
     { n:1, min:0,   max:104 },
@@ -105,7 +105,11 @@ WAŻNE: Przy treningu interwałowym (krótki czas <90min, max_hr >156) niska śr
     ? `ROZKŁAD STREF HR ostatnie 7 dni (dane sekundowe, dokładne — używaj do oceny polaryzacji): ${JSON.stringify(weekZonePcts)}`
     : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr to tylko średnia i jest NIEUŻYTECZNA dla oceny polaryzacji przy treningach interwałowych.`;
 
-  const userPrompt = `${zonesLine}
+  const loadLine = trainingLoad
+    ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${trainingLoad.tsb>10?'Piotr jest świeży — dobry moment na mocny trening.':trainingLoad.tsb>-10?'Forma neutralna.':trainingLoad.tsb>-25?'Zmęczony — unikaj kolejnych mocnych sesji bez regeneracji.':'MOCNO PRZECIĄŻONY — priorytet to regeneracja przed kolejnym interwałowym.'}`
+    : '';
+
+  const userPrompt = `${loadLine ? loadLine+'\n' : ''}${zonesLine}
 ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna — niska średnia HR (120-140) jest NORMALNA bo przerwy regeneracyjne zaniżają średnią. Polaryzację oceniaj WYŁĄCZNIE na podstawie danych sekundowych stref (powyżej), NIE na podstawie avg_hr z poszczególnych aktywności.
 TEN TYDZIEŃ: ${JSON.stringify(actSummary(weekActs||[], 20))}
 OSTATNIE 10 AKTYWNOŚCI: ${JSON.stringify(actSummary(activities, 10))}
