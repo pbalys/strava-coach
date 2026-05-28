@@ -61,7 +61,7 @@
   /* Zone bars */
   .zone-row { display:flex;align-items:center;gap:10px;margin-bottom:8px; }
   .zone-name { font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;width:28px; }
-  .zone-bar-bg { flex:1;background:var(--border);border-radius:4px;height:10px;overflow:visible;position:relative; }
+  .zone-bar-bg { flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden; }
   .zone-bar { height:100%;border-radius:4px;transition:width .6s ease; }
   .zone-pct { font-size:11px;color:var(--muted);width:36px;text-align:right; }
   .zone-s1 .zone-bar{background:#4da6ff;} .zone-s1 .zone-name{color:#4da6ff;}
@@ -303,30 +303,20 @@ function renderZones(acts, accZones){
     if(n===3) return p[3]<=5?'var(--green)':p[3]<=10?'#ffa500':'var(--red)';
     return (s45>=15&&s45<=22)?'var(--green)':s45>=8?'var(--yellow)':'var(--muted)';
   }
-  function targetMark(n){
-    // Visible target markers: bright line + small label above
-    const mk=(pos,lbl)=>`<div style="position:absolute;top:-13px;bottom:0;left:${pos}%;width:2px;background:#ffffff70;border-radius:1px"><span style="position:absolute;top:0;left:3px;font-size:8px;color:#ffffff70;white-space:nowrap;line-height:1">${lbl}</span></div>`;
-    if(n===2) return mk(80,'80%');
-    if(n===3) return mk(5,'5%');
-    if(n===4) return mk(15,'15%')+mk(20,'20%');
-    return '';
-  }
+  const TARGET_LABEL={1:'',2:'≥80%*',3:'≤5%',4:'15–20%*',5:''};
   const rows=ZONES.map(z=>{
     const pct=p[z.n];
     return `<div class="zone-row zone-s${z.n}">
       <div class="zone-name">${z.label}</div>
-      <div class="zone-bar-bg" style="position:relative">${targetMark(z.n)}<div class="zone-bar" style="width:${pct}%"></div></div>
-      <div class="zone-pct" style="color:${pctColor(z.n)}">${pct}%</div>
+      <div class="zone-bar-bg"><div class="zone-bar" style="width:${pct}%"></div></div>
+      <div class="zone-pct" style="color:${pctColor(z.n)};min-width:32px;text-align:right">${pct}%</div>
+      <div style="min-width:52px;font-size:9px;color:var(--muted);padding-left:6px">${TARGET_LABEL[z.n]}</div>
     </div>`;
   }).join('');
   const s12c=s12>=80?'var(--green)':s12>=65?'var(--yellow)':'var(--red)';
   const s3c=p[3]<=5?'var(--green)':p[3]<=10?'#ffa500':'var(--red)';
   const s45c=(s45>=15&&s45<=22)?'var(--green)':s45>=8?'var(--yellow)':'var(--muted)';
-  return rows+`<div style="margin-top:10px;display:flex;gap:12px;font-size:11px;flex-wrap:wrap">
-    <span>S1+S2 <strong style="color:${s12c}">${s12}%</strong> <span style="color:var(--muted)">(cel ≥80%)</span></span>
-    <span>S3 <strong style="color:${s3c}">${p[3]}%</strong> <span style="color:var(--muted)">(cel ≤5%)</span></span>
-    <span>S4+S5 <strong style="color:${s45c}">${s45}%</strong> <span style="color:var(--muted)">(cel 15-20%)</span></span>
-  </div>`;
+  return rows+`<div style="margin-top:8px;font-size:9px;color:var(--muted)">* S1+S2 łącznie · S4+S5 łącznie</div>`;
 }
 
 function renderWeek(weekActs){
@@ -546,11 +536,17 @@ function drawLoadChart(canvas, data) {
   ctx.beginPath(); ctx.moveTo(xS(data.length-1), PAD.top); ctx.lineTo(xS(data.length-1), PAD.top+ch); ctx.stroke();
   ctx.setLineDash([]);
 
-  // X labels
+  // X labels — skip last label if too close to previous
   ctx.textAlign = 'center'; ctx.fillStyle = '#888'; ctx.font = `10px 'Barlow', sans-serif`;
+  let lastLabelX = -999;
   data.forEach((d, i) => {
-    if (i % 14 === 0 || i === data.length - 1)
-      ctx.fillText(new Date(d.d+'T12:00').toLocaleDateString('pl-PL',{day:'numeric',month:'short'}), xS(i), PAD.top+ch+18);
+    if (i % 14 === 0 || i === data.length - 1) {
+      const x = xS(i);
+      if (x - lastLabelX > 38) {
+        ctx.fillText(new Date(d.d+'T12:00').toLocaleDateString('pl-PL',{day:'numeric',month:'short'}), x, PAD.top+ch+18);
+        lastLabelX = x;
+      }
+    }
   });
 }
 
@@ -808,8 +804,7 @@ function renderMain(weekActs,last7Acts,analysis,accZones,aiError){
         <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;flex-wrap:wrap;align-items:center">
           <span style="color:#4da6ff">● Fitness <strong id="ctlVal">—</strong></span>
           <span style="color:#FF6B35">● Zmęczenie <strong id="atlVal">—</strong></span>
-          <span id="tsbBadge" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">Forma: <span id="tsbVal">—</span></span>
-          <span style="font-size:9px;color:#555">&gt;10 świeży · ±10 neutralny · -25 zmęczony · &lt;−25 przeciążony</span>
+          <span id="tsbBadge" title="TSB (Training Stress Balance): >10 świeży · ±10 neutralny · poniżej -25 zmęczony · poniżej -25 przeciążony" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;cursor:help">Forma: <span id="tsbVal">—</span></span>
         </div>
       </div>
     </div>
