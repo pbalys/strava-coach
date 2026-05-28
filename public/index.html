@@ -351,8 +351,7 @@ function renderWeek(weekActs){
       const time=fmt(a.moving_time);
       const hr=a.average_heartrate?`❤️${Math.round(a.average_heartrate)}`:'';
       return `<div class="day-stats" style="font-size:9px;margin-top:4px;padding-top:4px;border-top:1px solid #ffffff10">
-        <span style="opacity:.7">${ico(a.type)}</span> <strong style="font-size:9px">${a.name.slice(0,14)}</strong><br>
-        <span style="color:var(--muted)">${[dist,time,hr].filter(Boolean).join(' · ')}</span>
+        <span style="opacity:.7">${ico(a.type)}</span> <span style="color:var(--muted)">${[dist,time,hr].filter(Boolean).join(' · ')}</span>
       </div>`;
     };
     if(isPlanned){
