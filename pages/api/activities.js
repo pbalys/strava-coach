@@ -11,7 +11,7 @@ export default async function handler(req, res) {
       })
     });
     const { access_token } = await tokenRes.json();
-    const r = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=20&page=${req.query.page||1}`, {
+    const r = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=100&page=${req.query.page||1}`, {
       headers: {'Authorization': 'Bearer ' + access_token}
     });
     const data = await r.json();
