@@ -18,14 +18,22 @@ export default async function handler(req, res) {
     const idList = ids.split(',').filter(Boolean).slice(0, 10);
     const results = await Promise.all(
       idList.map(id =>
-        fetch(`https://www.strava.com/api/v3/activities/${id}/streams?keys=heartrate,time&key_by_type=true`,
-          { headers: { Authorization: 'Bearer ' + access_token } }
-        ).then(r => r.json()).catch(() => null)
+        Promise.all([
+          fetch(`https://www.strava.com/api/v3/activities/${id}/streams?keys=heartrate,time&key_by_type=true`,
+            { headers: { Authorization: 'Bearer ' + access_token } }
+          ).then(r => r.json()).catch(() => null),
+          fetch(`https://www.strava.com/api/v3/activities/${id}`,
+            { headers: { Authorization: 'Bearer ' + access_token } }
+          ).then(r => r.json()).then(d => d?.device_name || null).catch(() => null)
+        ])
       )
     );
 
     const out = {};
-    idList.forEach((id, i) => { out[id] = results[i]; });
+    idList.forEach((id, i) => {
+      out[id] = results[i][0];
+      if (results[i][1]) out[id] = { ...out[id], _device_name: results[i][1] };
+    });
     res.json(out);
   } catch(e) {
     res.status(500).json({ error: e.message });

@@ -9,8 +9,9 @@ SPRZĘT I WIARYGODNOŚĆ DANYCH:
 - Specialized Roubaix + Wahoo ELEMNT BOLT + pasek piersiowy = dane HR w 100% wiarygodne
 - Cube Attain + Garmin Instinct 2 zegarek = HR zaniżone o ~10 BPM (dojazdówki do pracy)
 - Bieganie + Garmin Instinct 2 zegarek = HR zaniżone o ~10 BPM
-- device_name "Wahoo ELEMNT BOLT" = Roubaix, dokładne dane
+- device_name "Wahoo ELEMNT BOLT" = Roubaix, dokładne dane z paska
 - device_name "Garmin Instinct 2" = Cube lub bieganie, dane HR zaniżone
+- device_name null/undefined/brak = NIE ZAKŁADAJ urządzenia ani dokładności — napisz "urządzenie nieznane", nie koryguj HR o 10 BPM
 
 PLAN TRENINGOWY:
 - Wtorek: interwały 4-5×4min, cel >156 BPM (S4/S5), przerwy <123 BPM (S1/S2), Roubaix z paskiem

@@ -453,7 +453,8 @@ async function fetchAccurateZones(rideIds) {
           const zc = {};
           ZONES.forEach(z => { zc[z.n] = r.counts[z.n]; });
           const peaks = countPeaks(s.heartrate.data, s.time.data, 156, 45);
-          cached[id] = {c: zc, t: r.total, peaks};
+          const device_name = s._device_name || null;
+          cached[id] = {c: zc, t: r.total, peaks, device_name};
           try { localStorage.setItem('az_'+id, JSON.stringify(cached[id])); } catch(e){}
         }
       });
@@ -467,7 +468,7 @@ async function fetchAccurateZones(rideIds) {
     if (!z) return;
     ZONES.forEach(zn => { counts[zn.n] += z.c[zn.n]||0; });
     total += z.t;
-    perActivity[id] = {zones: z.c, total: z.t, peaks: z.peaks||[]};
+    perActivity[id] = {zones: z.c, total: z.t, peaks: z.peaks||[], device_name: z.device_name||null};
   });
   return total > 0 ? {counts, total, perActivity} : null;
 }
@@ -883,8 +884,10 @@ async function init(){
     const perAct=accZones?.perActivity||{};
     const enrichedWeekActs=last7Acts.map(a=>{
       const p=perAct[a.id];
-      if(!p||!p.peaks||!p.peaks.length) return a;
-      return {...a, interval_peaks: p.peaks, interval_count: p.peaks.length};
+      const extra={};
+      if(p?.peaks?.length){extra.interval_peaks=p.peaks;extra.interval_count=p.peaks.length;}
+      if(p?.device_name){extra.device_name=p.device_name;}
+      return Object.keys(extra).length?{...a,...extra}:a;
     });
     const loadData=calcTrainingLoad(activities);
     const ltd=loadData[loadData.length-1];
