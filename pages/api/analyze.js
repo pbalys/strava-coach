@@ -58,7 +58,7 @@ async function callClaude(userPrompt, maxTokens) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { activities, weekActs, singleActivity, zoneStats, weekZonePcts, trainingLoad } = req.body;
+  const { activities, weekActs, singleActivity, zoneStats, weekZonePcts, trainingLoad, restingHR } = req.body;
 
   const ZONES = [
     { n:1, min:0,   max:104 },
@@ -140,7 +140,11 @@ WAŻNE: Przy treningu interwałowym (krótki czas <90min, max_hr >156) niska śr
 
   const weekNum = Math.max(1, Math.ceil((new Date() - new Date('2026-05-25')) / (7*24*3600*1000)));
 
-  const userPrompt = `${loadLine ? loadLine+'\n' : ''}${zonesLine}
+  const restingHRLine = restingHR && restingHR.some(d => d.resting_hr)
+    ? `TĘTNO SPOCZYNKOWE (Garmin, ostatnie 7 dni): ${restingHR.filter(d=>d.resting_hr).map(d=>`${d.date}: ${d.resting_hr} BPM`).join(', ')} — trend: ${restingHR.filter(d=>d.resting_hr).length > 1 ? (restingHR.filter(d=>d.resting_hr).at(-1).resting_hr <= restingHR.filter(d=>d.resting_hr)[0].resting_hr ? 'malejący ✓ (dobry sygnał)' : 'rosnący ⚠ (zmęczenie)') : 'za mało danych'}`
+    : '';
+
+  const userPrompt = `${loadLine ? loadLine+'\n' : ''}${restingHRLine ? restingHRLine+'\n' : ''}${zonesLine}
 ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
 TEN TYDZIEŃ (Tydzień ${weekNum} planu): ${JSON.stringify(actSummary(weekActs||[], 20))}
 OSTATNIE 10 AKTYWNOŚCI (kontekst): ${JSON.stringify(actSummary(activities, 10))}
