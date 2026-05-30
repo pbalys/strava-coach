@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  const jwt = process.env.GARMIN_JWT;
+  const jwt = process.env.JWT_WEB;
   const session = process.env.GARMIN_SESSION;
   if (!jwt) return res.status(503).json({ error: 'Garmin credentials not configured' });
 
