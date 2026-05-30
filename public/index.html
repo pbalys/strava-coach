@@ -267,7 +267,7 @@ ${a.key_issues&&a.key_issues.length?`\n<strong>⚠️ ${a.key_issues.join(' · '
 ${a.recommendations.map((r,i)=>`${i+1}. ${r}`).join('\n')}
 
 <strong>🚴 Następny trening</strong>
-${a.next_workout}</div></div>
+${a.next_workout}${a.progress?`\n\n<strong>📈 Postępy</strong>\n${a.progress}`:''}</div></div>
   </div>`;
 }
 

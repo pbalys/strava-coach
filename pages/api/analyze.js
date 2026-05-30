@@ -1,12 +1,40 @@
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-// Static trainer profile — cached on first request
-const SYSTEM_PROFILE = `Jesteś trenerem kolarskim Piotra.
-PROFIL: 43 lat, 82kg, HRmax 177, FTP 211W (2.55 W/kg)
-STREFY HR: S1 <104, S2 105-138, S3 139-155, S4 156-172, S5 >173
-PLAN: Wt=interwały 4-5×4min S4/S5 (>156 BPM), Czw=łatwa S2 max 138 BPM 60-90min, Sob=długa S2 2-3h max 138 BPM
-WAŻNE: Roubaix+Wahoo ELEMNT BOLT+pasek piersiowy=dokładne HR. Cube+Garmin zegarek=HR zaniżone ~10 BPM. Bieganie+zegarek=HR zaniżone ~10 BPM.
-CEL POLARYZACJI: S1+S2 ≥80%, S3 ≤5%, S4+S5 ~15-20%`;
+const SYSTEM_PROFILE = `Jesteś trenerem kolarskim Piotra. Styl: konkretny, bezpośredni, po polsku, z liczbami. Nie pochwalaj bez powodu.
+
+PROFIL: Piotr, 43 lata, 82kg, HRmax 177 BPM, FTP 211W (2.55 W/kg)
+STREFY HR (Strava/Wahoo): S1 <104, S2 105-138, S3 139-155, S4 156-172, S5 >173
+
+SPRZĘT I WIARYGODNOŚĆ DANYCH:
+- Specialized Roubaix + Wahoo ELEMNT BOLT + pasek piersiowy = dane HR w 100% wiarygodne
+- Cube Attain + Garmin Instinct 2 zegarek = HR zaniżone o ~10 BPM (dojazdówki do pracy)
+- Bieganie + Garmin Instinct 2 zegarek = HR zaniżone o ~10 BPM
+- device_name "Wahoo ELEMNT BOLT" = Roubaix, dokładne dane
+- device_name "Garmin Instinct 2" = Cube lub bieganie, dane HR zaniżone
+
+PLAN TRENINGOWY:
+- Wtorek: interwały 4-5×4min, cel >156 BPM (S4/S5), przerwy <123 BPM (S1/S2), Roubaix z paskiem
+- Czwartek: łatwa jazda S2, MAX 138 BPM, 60-90 min, Roubaix
+- Sobota: długa jazda S2, 2-3h, MAX 138 BPM, Roubaix
+CEL: trening spolaryzowany — S1+S2 ≥80% czasu, S3 ≤5%, S4+S5 ~15-20%
+
+ZASADY OCENY INTERWAŁÓW:
+- NIE oceniaj po avg_hr — przy interwałach średnia zawsze niska przez przerwy
+- Oceniaj po: max_hr, % czasu w S4+S5, strukturze (widoczne piki)
+- max_hr >156 + wyraźna struktura = dobry trening interwałowy
+- S3 przy interwałach to naturalne przejście między strefami, nie błąd
+
+HISTORIA I POSTĘPY:
+- Zerwanie Achillesa: grudzień 2023, powrót do treningu: wiosna 2024
+- Plan spolaryzowany wystartował: 25 maja 2026 (tydzień 1)
+- Przed kontuzją FTP: 221W, obecne FTP: 211W (cel: wrócić do 221W+)
+- Zawsze podaj "Tydzień X planu" licząc od 25 maja 2026
+
+MIERNIKI POSTĘPÓW (śledź i porównuj tydzień do tygodnia):
+1. Polaryzacja: % czasu S1+S2 na Roubaix (cel ≥80%)
+2. Interwały: max HR i liczba powtórzeń >156 BPM (cel 4-5×4min)
+3. Długa jazda: avg HR na Roubaix w sobotę (cel <138 BPM przy rosnącym dystansie)
+4. Tętno spoczynkowe (trend — niższe = lepsza forma)`;
 
 async function callClaude(userPrompt, maxTokens) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -103,20 +131,22 @@ WAŻNE: Przy treningu interwałowym (krótki czas <90min, max_hr >156) niska śr
 
   const zonesLine = weekZonePcts
     ? `ROZKŁAD STREF HR ostatnie 7 dni (dane sekundowe, dokładne — używaj do oceny polaryzacji): ${JSON.stringify(weekZonePcts)}`
-    : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr to tylko średnia i jest NIEUŻYTECZNA dla oceny polaryzacji przy treningach interwałowych.`;
+    : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr jest NIEUŻYTECZNA dla polaryzacji przy interwałach.`;
 
   const loadLine = trainingLoad
-    ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${trainingLoad.tsb>10?'Piotr jest świeży — dobry moment na mocny trening.':trainingLoad.tsb>-10?'Forma neutralna.':trainingLoad.tsb>-25?'Zmęczony — unikaj kolejnych mocnych sesji bez regeneracji.':'MOCNO PRZECIĄŻONY — priorytet to regeneracja przed kolejnym interwałowym.'}`
+    ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${trainingLoad.tsb>10?'Świeży — dobry moment na mocny trening.':trainingLoad.tsb>-10?'Forma neutralna.':trainingLoad.tsb>-25?'Zmęczony — zaplanuj regenerację.':'MOCNO PRZECIĄŻONY — priorytet: regeneracja.'}`
     : '';
 
+  const weekNum = Math.max(1, Math.ceil((new Date() - new Date('2026-05-25')) / (7*24*3600*1000)));
+
   const userPrompt = `${loadLine ? loadLine+'\n' : ''}${zonesLine}
-ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna — niska średnia HR (120-140) jest NORMALNA bo przerwy regeneracyjne zaniżają średnią. Polaryzację oceniaj WYŁĄCZNIE na podstawie danych sekundowych stref (powyżej), NIE na podstawie avg_hr z poszczególnych aktywności.
-TEN TYDZIEŃ: ${JSON.stringify(actSummary(weekActs||[], 20))}
-OSTATNIE 10 AKTYWNOŚCI: ${JSON.stringify(actSummary(activities, 10))}
+ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
+TEN TYDZIEŃ (Tydzień ${weekNum} planu): ${JSON.stringify(actSummary(weekActs||[], 20))}
+OSTATNIE 10 AKTYWNOŚCI (kontekst): ${JSON.stringify(actSummary(activities, 10))}
 Dziś: ${today}
 
 Odpowiedz TYLKO JSON bez markdown:
-{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena>","key_issues":["<problem>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co robić>"}`;
+{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia planu>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB>","key_issues":["<problem>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co robić>","progress":"<sekcja Postępy: porównaj mierniki z poprzednim tygodniem — polaryzacja S1+S2%, max HR na interwałach, avg HR na długiej jeździe>"}`;
 
   try {
     const text = await callClaude(userPrompt, 2000);
