@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
   try {
     const client = new GarminConnect({ username: email, password });
-    await client.login(email, password);
+    await client.login();
 
     // Fetch resting HR for last 7 days
     const days = [];
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
     const results = await Promise.all(
       days.map(date =>
-        client.getDailyHeartRate(email, date)
+        client.getHeartRate(new Date(date))
           .then(data => ({ date, resting_hr: data?.restingHeartRate ?? null }))
           .catch(() => ({ date, resting_hr: null }))
       )
