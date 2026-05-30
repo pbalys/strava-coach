@@ -417,14 +417,29 @@ function renderActs(){
   }).join('')||'<p style="color:var(--muted);padding:16px">Brak aktywności.</p>';
 }
 
+function countPeaks(hrData, timeData, threshold=156, minDurSec=45) {
+  // Count distinct intervals where HR stayed above threshold for at least minDurSec
+  let peaks=[], inPeak=false, peakStart=0;
+  for(let i=0;i<hrData.length;i++){
+    if(!inPeak && hrData[i]>=threshold){inPeak=true;peakStart=timeData[i];}
+    else if(inPeak && hrData[i]<threshold){
+      const dur=timeData[i]-peakStart;
+      if(dur>=minDurSec) peaks.push(Math.round(dur/60));
+      inPeak=false;
+    }
+  }
+  if(inPeak){const dur=timeData[timeData.length-1]-peakStart;if(dur>=minDurSec)peaks.push(Math.round(dur/60));}
+  return peaks;
+}
+
 async function fetchAccurateZones(rideIds) {
   if (!rideIds.length) return null;
-  // Check per-activity cache (historical activities never change)
   const toFetch = [], cached = {};
   rideIds.forEach(id => {
     try {
       const c = JSON.parse(localStorage.getItem('az_'+id)||'null');
-      if (c) cached[id] = c; else toFetch.push(id);
+      // Refetch if cache missing peaks field (old format)
+      if (c && c.peaks !== undefined) cached[id] = c; else toFetch.push(id);
     } catch(e) { toFetch.push(id); }
   });
 
@@ -437,7 +452,8 @@ async function fetchAccurateZones(rideIds) {
           const r = calcZonesFromStreams(s.heartrate.data, s.time.data);
           const zc = {};
           ZONES.forEach(z => { zc[z.n] = r.counts[z.n]; });
-          cached[id] = {c: zc, t: r.total};
+          const peaks = countPeaks(s.heartrate.data, s.time.data, 156, 45);
+          cached[id] = {c: zc, t: r.total, peaks};
           try { localStorage.setItem('az_'+id, JSON.stringify(cached[id])); } catch(e){}
         }
       });
@@ -445,13 +461,15 @@ async function fetchAccurateZones(rideIds) {
   }
 
   const counts = {1:0,2:0,3:0,4:0,5:0}; let total = 0;
+  const perActivity = {};
   rideIds.forEach(id => {
     const z = cached[id];
     if (!z) return;
     ZONES.forEach(zn => { counts[zn.n] += z.c[zn.n]||0; });
     total += z.t;
+    perActivity[id] = {zones: z.c, total: z.t, peaks: z.peaks||[]};
   });
-  return total > 0 ? {counts, total} : null;
+  return total > 0 ? {counts, total, perActivity} : null;
 }
 
 function estimateTSS(a) {
@@ -861,10 +879,17 @@ async function init(){
 
     // Refresh AI in background — update scores/coach panel silently when done
     const weekZonePcts=accZones?(()=>{const o={};ZONES.forEach(z=>{o['S'+z.n]={pct:Math.round(accZones.counts[z.n]/accZones.total*100),mins:Math.round(accZones.counts[z.n]/60)};});return o;})():null;
+    // Enrich weekActs with per-activity interval peak data from stream cache
+    const perAct=accZones?.perActivity||{};
+    const enrichedWeekActs=last7Acts.map(a=>{
+      const p=perAct[a.id];
+      if(!p||!p.peaks||!p.peaks.length) return a;
+      return {...a, interval_peaks: p.peaks, interval_count: p.peaks.length};
+    });
     const loadData=calcTrainingLoad(activities);
     const ltd=loadData[loadData.length-1];
     const trainingLoad={ctl:Math.round(ltd.ctl),atl:Math.round(ltd.atl),tsb:Math.round(ltd.tsb*10)/10};
-    apiFetch('/api/analyze',{activities,weekActs:last7Acts,weekZonePcts,trainingLoad})
+    apiFetch('/api/analyze',{activities,weekActs:enrichedWeekActs,weekZonePcts,trainingLoad})
       .then(fresh=>{
         setCachedAnalysis(fresh);
         renderMain(weekActs,last7Acts,fresh,accZones,null);

@@ -122,6 +122,7 @@ WAŻNE: Przy treningu interwałowym (krótki czas <90min, max_hr >156) niska śr
       ...(isInterval ? {avg_hr_NOTE:'interval_session_avg_hr_irrelevant'} : {avg_hr: a.average_heartrate ? Math.round(a.average_heartrate) : null}),
       max_hr: maxHr,
       is_interval: isInterval || undefined,
+      ...(a.interval_peaks ? {interval_peaks_min: a.interval_peaks, interval_count: a.interval_count} : {}),
       avg_watts: (a.type==='VirtualRide' && a.average_watts) ? Math.round(a.average_watts) : null,
       device: a.device_name
     };
