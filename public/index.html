@@ -893,7 +893,7 @@ async function init(){
     const ltd=loadData[loadData.length-1];
     const trainingLoad={ctl:Math.round(ltd.ctl),atl:Math.round(ltd.atl),tsb:Math.round(ltd.tsb*10)/10};
     // Fetch resting HR from Garmin in background (non-blocking)
-    const restingHR = await apiFetch('/api/garmin').then(d=>d.days).catch(()=>null);
+    const restingHR = await apiFetch('/api/resting-hr').then(d=>d.days).catch(()=>null);
     apiFetch('/api/analyze',{activities,weekActs:enrichedWeekActs,weekZonePcts,trainingLoad,restingHR})
       .then(fresh=>{
         setCachedAnalysis(fresh);
