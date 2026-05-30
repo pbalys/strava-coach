@@ -29,6 +29,7 @@ export default async function handler(req, res) {
 
     res.json({ days: results });
   } catch (e) {
+    console.error('Garmin error:', e.message, e.stack);
     res.status(500).json({ error: e.message });
   }
 }
