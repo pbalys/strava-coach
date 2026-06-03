@@ -150,8 +150,8 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
   const userPrompt = `${loadLine ? loadLine+'\n' : ''}${restingHRLine ? restingHRLine+'\n' : ''}${zonesLine}
 ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
 WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
-WAŻNE: Oceniaj TYLKO dni które już minęły. Nie krytykuj za niewykonane treningi w dniach które jeszcze nie nastąpiły (dziś: ${today}).
-WAŻNE: Nie krytykuj za pominięte treningi jeśli poprzednia analiza zalecała odpoczynek lub TSB wskazywało wysokie zmęczenie (TSB < -20).
+BEZWZGLĘDNA ZASADA: Dziś jest ${today}. Oceniaj WYŁĄCZNIE dni które już minęły. Sobota, niedziela ani żaden przyszły dzień tego tygodnia NIE może być krytykowany jeśli jeszcze nie nastąpił. Nie pisz "brak jazdy w sobotę" jeśli sobota jeszcze nie była.
+BEZWZGLĘDNA ZASADA: Jeśli TSB w tym tygodniu było < -20 LUB poprzednia analiza zalecała odpoczynek — pominięte treningi S2 NIE są błędem, były wymuszone zmęczeniem. Nie krytykuj za nie.
 TEN TYDZIEŃ (Tydzień ${weekNum} planu): ${JSON.stringify(actSummary(weekActs||[], 20))}
 OSTATNIE 10 AKTYWNOŚCI (kontekst): ${JSON.stringify(actSummary(activities, 10))}
 Dziś: ${today}
