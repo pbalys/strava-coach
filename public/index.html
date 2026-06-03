@@ -304,7 +304,7 @@ function renderZones(acts, accZones){
     if(n===3) return p[3]<=5?'var(--green)':p[3]<=10?'#ffa500':'var(--red)';
     return (s45>=15&&s45<=22)?'var(--green)':s45>=8?'var(--yellow)':'var(--muted)';
   }
-  const TARGET_LABEL={1:'',2:'≥80%*',3:'≤5%',4:'15–20%*',5:''};
+  const TARGET_LABEL={1:'',2:'≥80%*',3:'≤5%',4:'5–8%*',5:''};
   const rows=ZONES.map(z=>{
     const pct=p[z.n];
     return `<div class="zone-row zone-s${z.n}">
