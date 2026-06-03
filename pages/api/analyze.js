@@ -97,7 +97,8 @@ ${isInterval?'- TYP: TRENING INTERWAŁOWY — oceniaj TYLKO po max_hr i % czasu 
 
 Napisz analizę PO POLSKU w max 3 zdaniach: oceń intensywność względem planu, co konkretnie zrobił dobrze i co poprawić. Bez wstępu, bez powtarzania danych.
 WAŻNE: Przy treningu interwałowym (krótki czas <90min, max_hr >156) niska średnia HR (120-140) jest NORMALNA i OCZEKIWANA - to efekt przerw regeneracyjnych. Oceniaj interwały TYLKO po: max_hr, % czasu w S4+S5, i strukturze treningu.
-WAŻNE: Jeśli wykres HR pokazuje wyraźne powtarzające się piki powyżej 156 BPM z przerwami powracającymi do S2 - to są interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura treningu jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.`;
+WAŻNE: Jeśli wykres HR pokazuje wyraźne powtarzające się piki powyżej 156 BPM z przerwami powracającymi do S2 - to są interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura treningu jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
+WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to naturalny efekt opadającego tętna po wysiłku. Szybkość opadania HR jest miarą wydolności aerobowej. Nie krytykuj S3 przy treningach interwałowych jeśli HR wyraźnie opada w kierunku S2. Krytykuj S3 tylko przy jazdach długich/regeneracyjnych gdzie HR powinno być stabilnie w S2.`;
 
     try {
       const text = await callClaude(userPrompt, 400);
