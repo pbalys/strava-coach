@@ -17,7 +17,7 @@ PLAN TRENINGOWY:
 - Wtorek: interwały 4-5×4min, cel >156 BPM (S4/S5), przerwy <123 BPM (S1/S2), Roubaix z paskiem
 - Czwartek: łatwa jazda S2, MAX 138 BPM, 60-90 min, Roubaix
 - Sobota: długa jazda S2, 2-3h, MAX 138 BPM, Roubaix
-CEL: trening spolaryzowany — S1+S2 ≥80% czasu, S3 ≤5%, S4+S5 ~15-20%
+CEL: trening spolaryzowany — S1+S2 ≥80% czasu, S3 ≤5%, S4+S5 ~5-8% całości tygodnia (przy 3-4h S2 + 20min interwałów więcej matematycznie niemożliwe) — ale interwały muszą być jakościowe: max HR >156, wyraźna struktura pików
 
 ZASADY OCENY INTERWAŁÓW:
 - NIE oceniaj po avg_hr — przy interwałach średnia zawsze niska przez przerwy
@@ -149,6 +149,8 @@ WAŻNE: Jeśli wykres HR pokazuje wyraźne powtarzające się piki powyżej 156 
   const userPrompt = `${loadLine ? loadLine+'\n' : ''}${restingHRLine ? restingHRLine+'\n' : ''}${zonesLine}
 ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
 WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
+WAŻNE: Oceniaj TYLKO dni które już minęły. Nie krytykuj za niewykonane treningi w dniach które jeszcze nie nastąpiły (dziś: ${today}).
+WAŻNE: Nie krytykuj za pominięte treningi jeśli poprzednia analiza zalecała odpoczynek lub TSB wskazywało wysokie zmęczenie (TSB < -20).
 TEN TYDZIEŃ (Tydzień ${weekNum} planu): ${JSON.stringify(actSummary(weekActs||[], 20))}
 OSTATNIE 10 AKTYWNOŚCI (kontekst): ${JSON.stringify(actSummary(activities, 10))}
 Dziś: ${today}
