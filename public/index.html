@@ -79,7 +79,7 @@
   .day-label { font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px; }
   .day-stats { font-size:10px;color:var(--text);margin-top:auto;line-height:1.5; }
   .day-cell.done{border-color:var(--green);background:#081808;}
-  .day-cell.planned{border-color:var(--orange);background:#1a0800;}
+  .day-cell.planned{border-color:var(--blue);background:#081828;}
   .day-cell.missed{border-color:var(--red);background:#180808;}
   .day-cell.rest{opacity:.35;}
   @media(max-width:640px){.week-grid{grid-template-columns:repeat(7,1fr);gap:4px;}.day-cell{padding:6px 3px;min-height:80px;}.day-icon{font-size:15px;}}
@@ -813,7 +813,7 @@ function renderMain(weekActs,last7Acts,analysis,accZones,aiError){
       <div class="panel-title">Plan tygodnia <span style="font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none">${weekRangeStr()}</span></div>
       <div class="week-grid">${renderWeek(weekActs)}</div>
       <div style="margin-top:10px;font-size:10px;color:var(--muted);display:flex;gap:14px">
-        <span>🟠 Zaplanowany</span><span>🟢 Wykonany</span><span>🔴 Pominięty</span>
+        <span>🔵 Zaplanowany</span><span>🟢 Wykonany</span><span>🔴 Pominięty</span>
       </div>
     </div>
     <div class="two-col">
