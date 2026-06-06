@@ -155,6 +155,7 @@
   <div class="dot loading" id="dot"></div>
   <span id="statusTxt">Łączenie ze Stravą...</span>
   <button onclick="localStorage.removeItem('weekly_ai_v1');location.reload();" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:2px 8px;border-radius:4px;cursor:pointer;">Odśwież AI</button>
+  <button id="cacheBtn" onclick="refreshStreamCache()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:2px 8px;border-radius:4px;cursor:pointer;margin-left:6px;">Odśwież cache streamów</button>
 </div>
 <div class="container">
   <div id="main">
@@ -858,6 +859,28 @@ function renderMain(weekActs,last7Acts,analysis,accZones,aiError){
     tsbMsg=`TSB ${tsb} — mocne przeciążenie. Zmęczenie (${atl}) jest ${atl-ctl} pkt powyżej bazy fitness (${ctl}). Priorytet: 3–4 dni spokojnego treningu lub odpoczynku zanim wrócisz do interwałów.`;}
   document.getElementById('tsbInterpret').textContent=tsbMsg;
   setTimeout(()=>drawLoadChart(document.getElementById('loadChart'),loadData),50);
+}
+
+async function refreshStreamCache() {
+  const btn = document.getElementById('cacheBtn');
+  btn.disabled = true;
+  btn.textContent = 'Pobieranie...';
+  try {
+    const rideIds = activities
+      .filter(a => a.type === 'Ride' || a.type === 'VirtualRide')
+      .slice(0, 20)
+      .map(a => a.id)
+      .join(',');
+    const url = rideIds ? `/api/cache-streams?ids=${rideIds}` : '/api/cache-streams';
+    const result = await apiFetch(url);
+    btn.textContent = `Cache: ${result.cached} ✓ / ${result.skipped} pom.`;
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = 'Odśwież cache streamów'; btn.style.color = ''; btn.disabled = false; }, 4000);
+  } catch(e) {
+    btn.textContent = 'Błąd cache';
+    btn.style.color = 'var(--red)';
+    setTimeout(() => { btn.textContent = 'Odśwież cache streamów'; btn.style.color = ''; btn.disabled = false; }, 3000);
+  }
 }
 
 async function init(){

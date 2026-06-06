@@ -1,4 +1,13 @@
+import { Redis } from '@upstash/redis';
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+
+function getRedis() {
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  return new Redis({ url, token });
+}
 
 const SYSTEM_PROFILE = `Jesteś trenerem kolarskim Piotra. Styl: konkretny, bezpośredni, po polsku, z liczbami. Nie pochwalaj bez powodu.
 
@@ -110,6 +119,22 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
 
   // Weekly analysis — NOTE: no zone distribution from avg_hr (misleading — avg_hr 142 = all time in S3,
   // hiding real S4/S5 spikes visible only in second-by-second stream data). Use avg_hr + max_hr per activity.
+
+  // Enrich Wahoo activities with accurate zone data from KV cache
+  const kvZones = {};
+  const redis = getRedis();
+  if (redis && weekActs && weekActs.length) {
+    const wahooActs = weekActs.filter(a => a.device_name === 'Wahoo ELEMNT BOLT');
+    if (wahooActs.length) {
+      try {
+        await Promise.all(wahooActs.map(async a => {
+          const cached = await redis.get(`activity:${a.id}`);
+          if (cached) kvZones[a.id] = cached;
+        }));
+      } catch(e) { /* KV unavailable, continue without cache */ }
+    }
+  }
+
   const DAY_PL = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
   const actSummary = (acts, n) => acts.slice(0, n).map(a => {
     const durMin = Math.round(a.moving_time/60);
@@ -127,7 +152,12 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
       is_interval: isInterval || undefined,
       ...(a.interval_peaks ? {interval_peaks_min: a.interval_peaks, interval_count: a.interval_count} : {}),
       avg_watts: (a.type==='VirtualRide' && a.average_watts) ? Math.round(a.average_watts) : null,
-      device: a.device_name
+      device: a.device_name,
+      ...(kvZones[a.id] ? {
+        zones_kv: kvZones[a.id].zones,
+        interval_peaks_kv: kvZones[a.id].interval_peaks,
+        interval_count_kv: kvZones[a.id].interval_count,
+      } : {})
     };
   });
 
@@ -149,6 +179,7 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
 
   const userPrompt = `${loadLine ? loadLine+'\n' : ''}${restingHRLine ? restingHRLine+'\n' : ''}${zonesLine}
 ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
+DANE KV (zones_kv): Jeśli aktywność ma pole zones_kv — to dokładne dane stref z sekundowych streamów (serwer-side cache). Używaj ich do oceny polaryzacji i struktury interwałowej. interval_count_kv to liczba pików >156 BPM trwających >60s.
 WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
 BEZWZGLĘDNA ZASADA: Dziś jest ${today}. Oceniaj WYŁĄCZNIE dni które już minęły. Sobota, niedziela ani żaden przyszły dzień tego tygodnia NIE może być krytykowany jeśli jeszcze nie nastąpił. Nie pisz "brak jazdy w sobotę" jeśli sobota jeszcze nie była.
 BEZWZGLĘDNA ZASADA: Jeśli TSB w tym tygodniu było < -20 LUB poprzednia analiza zalecała odpoczynek — pominięte treningi S2 NIE są błędem, były wymuszone zmęczeniem. Nie krytykuj za nie.
