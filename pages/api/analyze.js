@@ -135,6 +135,39 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     }
   }
 
+  // Fetch previous week (7–14 days ago) Wahoo zone data from KV for comparison
+  let prevWeekZonePcts = null;
+  if (redis && activities && activities.length) {
+    const now = new Date();
+    const prevEnd = new Date(now); prevEnd.setDate(now.getDate() - 7); prevEnd.setHours(0,0,0,0);
+    const prevStart = new Date(now); prevStart.setDate(now.getDate() - 14); prevStart.setHours(0,0,0,0);
+    const prevActs = activities.filter(a => {
+      const d = new Date(a.start_date_local);
+      return d >= prevStart && d < prevEnd;
+    });
+    if (prevActs.length) {
+      try {
+        const prevKv = {};
+        await Promise.all(prevActs.map(async a => {
+          const cached = await redis.get(`activity:${a.id}`);
+          if (cached) prevKv[a.id] = cached;
+        }));
+        const counts = {1:0,2:0,3:0,4:0,5:0};
+        let total = 0;
+        Object.values(prevKv).forEach(d => {
+          [1,2,3,4,5].forEach(n => { counts[n] += d.zones?.['S'+n]?.seconds || 0; });
+          total += d.total_seconds || 0;
+        });
+        if (total > 0) {
+          prevWeekZonePcts = {};
+          [1,2,3,4,5].forEach(n => {
+            prevWeekZonePcts['S'+n] = { pct: Math.round(counts[n]/total*100), mins: Math.round(counts[n]/60) };
+          });
+        }
+      } catch(e) {}
+    }
+  }
+
   const DAY_PL = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
   const actSummary = (acts, n) => acts.slice(0, n).map(a => {
     const durMin = Math.round(a.moving_time/60);
@@ -167,6 +200,10 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     ? `ROZKŁAD STREF HR ostatnie 7 dni (dane sekundowe, dokładne — używaj do oceny polaryzacji): ${JSON.stringify(weekZonePcts)}`
     : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr jest NIEUŻYTECZNA dla polaryzacji przy interwałach.`;
 
+  const prevZonesLine = prevWeekZonePcts
+    ? `ROZKŁAD STREF HR poprzedni tydzień 7–14 dni temu (dane sekundowe z KV cache, używaj do porównania tydzień-do-tygodnia): ${JSON.stringify(prevWeekZonePcts)}`
+    : '';
+
   const loadLine = trainingLoad
     ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${trainingLoad.tsb>10?'Świeży — dobry moment na mocny trening.':trainingLoad.tsb>-10?'Forma neutralna.':trainingLoad.tsb>-25?'Zmęczony — zaplanuj regenerację.':'MOCNO PRZECIĄŻONY — priorytet: regeneracja.'}`
     : '';
@@ -178,6 +215,7 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     : '';
 
   const userPrompt = `${loadLine ? loadLine+'\n' : ''}${restingHRLine ? restingHRLine+'\n' : ''}${zonesLine}
+${prevZonesLine ? prevZonesLine+'\n' : ''}
 ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
 DANE KV (zones_kv): Jeśli aktywność ma pole zones_kv — to dokładne dane stref z sekundowych streamów (serwer-side cache). Używaj ich do oceny polaryzacji i struktury interwałowej. interval_count_kv to liczba pików >156 BPM trwających >60s.
 WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
