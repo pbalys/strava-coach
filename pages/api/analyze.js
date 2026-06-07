@@ -126,14 +126,17 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
   // Weekly analysis — NOTE: no zone distribution from avg_hr (misleading — avg_hr 142 = all time in S3,
   // hiding real S4/S5 spikes visible only in second-by-second stream data). Use avg_hr + max_hr per activity.
 
-  // Enrich Wahoo activities with accurate zone data from KV cache
+  // Enrich activities with accurate zone data from KV cache (weekActs + last 10 for context)
   const kvZones = {};
   const redis = getRedis();
-  if (redis && weekActs && weekActs.length) {
-    const wahooActs = weekActs.filter(a => a.device_name === 'Wahoo ELEMNT BOLT');
-    if (wahooActs.length) {
+  if (redis) {
+    const toEnrich = [
+      ...(weekActs || []),
+      ...(activities || []).slice(0, 10)
+    ].filter((a, i, arr) => arr.findIndex(b => b.id === a.id) === i); // deduplicate
+    if (toEnrich.length) {
       try {
-        await Promise.all(wahooActs.map(async a => {
+        await Promise.all(toEnrich.map(async a => {
           const cached = await redis.get(`activity:${a.id}`);
           if (cached) kvZones[a.id] = cached;
         }));
@@ -227,6 +230,7 @@ DANE KV (zones_kv): Jeśli aktywność ma pole zones_kv — to dokładne dane st
 WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
 BEZWZGLĘDNA ZASADA: Dziś jest ${today}. Oceniaj WYŁĄCZNIE dni które już minęły. Sobota, niedziela ani żaden przyszły dzień tego tygodnia NIE może być krytykowany jeśli jeszcze nie nastąpił. Nie pisz "brak jazdy w sobotę" jeśli sobota jeszcze nie była.
 BEZWZGLĘDNA ZASADA: Jeśli TSB w tym tygodniu było < -20 LUB poprzednia analiza zalecała odpoczynek — pominięte treningi S2 NIE są błędem, były wymuszone zmęczeniem. Nie krytykuj za nie.
+BEZWZGLĘDNA ZASADA SPÓJNOŚCI: Sekcja "next_workout" musi być w 100% spójna z sekcją "recommendations". Jeśli recommendations mówi "zero roweru w poniedziałek i wtorek" — next_workout NIE może zawierać jazdy w poniedziałek ani wtorek. Żadnych sprzeczności między sekcjami.
 TEN TYDZIEŃ (Tydzień ${weekNum} planu): ${JSON.stringify(actSummary(weekActs||[], 20))}
 OSTATNIE 10 AKTYWNOŚCI (kontekst): ${JSON.stringify(actSummary(activities, 10))}
 Dziś: ${today}
