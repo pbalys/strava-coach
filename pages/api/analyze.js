@@ -34,6 +34,12 @@ ZASADY OCENY INTERWAŁÓW:
 - max_hr >156 + wyraźna struktura = dobry trening interwałowy
 - S3 przy interwałach to naturalne przejście między strefami, nie błąd
 
+ZASADY OCENY DŁUGIEJ JAZDY S2 (sobota/czwartek):
+- Wahoo ELEMNT BOLT + avg_hr < 138 BPM + dystans > 50 km = WZOROWA realizacja planu, napisz to wprost
+- Wahoo ELEMNT BOLT + avg_hr < 138 BPM + czas > 90 min = WZOROWA realizacja planu
+- NIE używaj określeń "przyzwoity", "niezły", "w porządku" — to jest dokładnie to czego plan wymaga
+- avg_hr 120-135 BPM na Roubaix z paskiem to idealne tempo S2, nie za wolno — to cel
+
 HISTORIA I POSTĘPY:
 - Zerwanie Achillesa: grudzień 2023, powrót do treningu: wiosna 2024
 - Plan spolaryzowany wystartował: 25 maja 2026 (tydzień 1)
