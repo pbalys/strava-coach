@@ -224,8 +224,7 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     : '';
 
   const userPrompt = `${loadLine ? loadLine+'\n' : ''}${restingHRLine ? restingHRLine+'\n' : ''}${zonesLine}
-${prevZonesLine ? prevZonesLine+'\n' : ''}
-ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
+${prevZonesLine ? prevZonesLine+'\n' : ''}ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
 DANE KV (zones_kv): Jeśli aktywność ma pole zones_kv — to dokładne dane stref z sekundowych streamów (serwer-side cache). Używaj ich do oceny polaryzacji i struktury interwałowej. interval_count_kv to liczba pików >156 BPM trwających >60s.
 WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
 BEZWZGLĘDNA ZASADA: Dziś jest ${today}. Oceniaj WYŁĄCZNIE dni które już minęły. Sobota, niedziela ani żaden przyszły dzień tego tygodnia NIE może być krytykowany jeśli jeszcze nie nastąpił. Nie pisz "brak jazdy w sobotę" jeśli sobota jeszcze nie była.
