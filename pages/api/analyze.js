@@ -56,7 +56,7 @@ MIERNIKI POSTĘPÓW (śledź i porównuj tydzień do tygodnia):
 1. Polaryzacja: % czasu S1+S2 na Roubaix (cel ≥80%)
 2. Interwały: max HR i liczba powtórzeń >156 BPM (cel 4-5×4min)
 3. Długa jazda: avg HR na Roubaix w sobotę (cel <138 BPM przy rosnącym dystansie)
-4. Tętno spoczynkowe (trend — niższe = lepsza forma)`;
+NIE sugeruj zapisywania tętna spoczynkowego rano — Piotr tego nie robi i nie zamierza.`;
 
 async function callClaude(userPrompt, maxTokens) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -136,10 +136,8 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
   const kvZones = {};
   const redis = getRedis();
   if (redis) {
-    const toEnrich = [
-      ...(weekActs || []),
-      ...(activities || []).slice(0, 10)
-    ].filter((a, i, arr) => arr.findIndex(b => b.id === a.id) === i); // deduplicate
+    const toEnrich = (activities || [])
+      .filter((a, i, arr) => arr.findIndex(b => b.id === a.id) === i);
     if (toEnrich.length) {
       try {
         await Promise.all(toEnrich.map(async a => {
