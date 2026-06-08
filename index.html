@@ -153,9 +153,11 @@ function calcZones(acts) {
 }
 
 function getWeekActs(acts){
-  const now=new Date(),mon=new Date(now);
-  mon.setDate(now.getDate()-((now.getDay()+6)%7));mon.setHours(0,0,0,0);
-  return acts.filter(a=>new Date(a.start_date_local)>=mon);
+  const PLAN_START=new Date('2026-05-25T00:00:00');
+  const daysSince=Math.floor((Date.now()-PLAN_START)/(24*3600*1000));
+  const weekOffset=Math.floor(daysSince/7)*7;
+  const weekStart=new Date(PLAN_START.getTime()+weekOffset*24*3600*1000);
+  return acts.filter(a=>new Date(a.start_date_local)>=weekStart);
 }
 
 function scoreColor(s){return s>=75?'green':s>=50?'yellow':'red';}

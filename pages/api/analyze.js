@@ -152,13 +152,16 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
 
   // Fetch previous week (7–14 days ago) Wahoo zone data from KV for comparison
   let prevWeekZonePcts = null;
+  const PLAN_START = new Date('2026-05-25T00:00:00');
+  const daysSincePlanStart = Math.floor((Date.now() - PLAN_START) / (24*3600*1000));
+  const currentWeekNum = Math.floor(daysSincePlanStart / 7) + 1;
+  const currentWeekStart = new Date(PLAN_START.getTime() + Math.floor(daysSincePlanStart / 7) * 7 * 24*3600*1000);
+  const prevWeekStart = new Date(currentWeekStart.getTime() - 7*24*3600*1000);
+
   if (redis && activities && activities.length) {
-    const now = new Date();
-    const prevEnd = new Date(now); prevEnd.setDate(now.getDate() - 7); prevEnd.setHours(0,0,0,0);
-    const prevStart = new Date(now); prevStart.setDate(now.getDate() - 14); prevStart.setHours(0,0,0,0);
     const prevActs = activities.filter(a => {
       const d = new Date(a.start_date_local);
-      return d >= prevStart && d < prevEnd;
+      return d >= prevWeekStart && d < currentWeekStart;
     });
     if (prevActs.length) {
       try {
@@ -223,7 +226,7 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${trainingLoad.tsb>10?'Świeży — dobry moment na mocny trening.':trainingLoad.tsb>-10?'Forma neutralna.':trainingLoad.tsb>-25?'Zmęczony, regeneracja w toku — zaplanuj lekki dzień przed kolejną intensywną sesją.':'Duże zmęczenie — priorytet: regeneracja. Słowo przetrenowanie stosuj TYLKO gdy ATL nadal rośnie.'}`
     : '';
 
-  const weekNum = Math.max(1, Math.ceil((new Date() - new Date('2026-05-25')) / (7*24*3600*1000)));
+  const weekNum = currentWeekNum;
 
   const restingHRLine = restingHR && restingHR.some(d => d.resting_hr)
     ? `TĘTNO SPOCZYNKOWE (Garmin, ostatnie 7 dni): ${restingHR.filter(d=>d.resting_hr).map(d=>`${d.date}: ${d.resting_hr} BPM`).join(', ')} — trend: ${restingHR.filter(d=>d.resting_hr).length > 1 ? (restingHR.filter(d=>d.resting_hr).at(-1).resting_hr <= restingHR.filter(d=>d.resting_hr)[0].resting_hr ? 'malejący ✓ (dobry sygnał)' : 'rosnący ⚠ (zmęczenie)') : 'za mało danych'}`
