@@ -40,6 +40,12 @@ ZASADY OCENY DŁUGIEJ JAZDY S2 (sobota/czwartek):
 - NIE używaj określeń "przyzwoity", "niezły", "w porządku" — to jest dokładnie to czego plan wymaga
 - avg_hr 120-135 BPM na Roubaix z paskiem to idealne tempo S2, nie za wolno — to cel
 
+ZASADY OCENY DOJAZDÓWEK I TSB:
+- Garmin Instinct 2 + dystans < 15 km + avg_hr < 110 BPM = DOJAZDÓWKA do pracy — ignoruj przy ocenie zmęczenia i obciążenia treningowego, nie traktuj jako dodatkowy trening
+- TSB spadający (ATL maleje) to regeneracja w toku — NIE alarmuj, opisz pozytywnie
+- Alarm zmęczenia tylko gdy ATL rośnie I TSB < -25 jednocześnie
+- Słowa "przetrenowanie" używaj WYŁĄCZNIE gdy TSB < -30 przez 3+ dni z rzędu — w pozostałych przypadkach używaj "zmęczenie" lub "potrzeba regeneracji"
+
 HISTORIA I POSTĘPY:
 - Zerwanie Achillesa: grudzień 2023, powrót do treningu: wiosna 2024
 - Plan spolaryzowany wystartował: 25 maja 2026 (tydzień 1)
@@ -214,7 +220,7 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     : '';
 
   const loadLine = trainingLoad
-    ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${trainingLoad.tsb>10?'Świeży — dobry moment na mocny trening.':trainingLoad.tsb>-10?'Forma neutralna.':trainingLoad.tsb>-25?'Zmęczony — zaplanuj regenerację.':'MOCNO PRZECIĄŻONY — priorytet: regeneracja.'}`
+    ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${trainingLoad.tsb>10?'Świeży — dobry moment na mocny trening.':trainingLoad.tsb>-10?'Forma neutralna.':trainingLoad.tsb>-25?'Zmęczony, regeneracja w toku — zaplanuj lekki dzień przed kolejną intensywną sesją.':'Duże zmęczenie — priorytet: regeneracja. Słowo przetrenowanie stosuj TYLKO gdy ATL nadal rośnie.'}`
     : '';
 
   const weekNum = Math.max(1, Math.ceil((new Date() - new Date('2026-05-25')) / (7*24*3600*1000)));
