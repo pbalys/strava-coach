@@ -69,13 +69,13 @@ export default async function handler(req, res) {
     if (req.query.ids) {
       idsToProcess = req.query.ids.split(',').filter(Boolean).slice(0, 20);
     } else {
-      const actsRes = await fetch('https://www.strava.com/api/v3/athlete/activities?per_page=50&page=1', {
+      const PLAN_START_TS = Math.floor(new Date('2026-05-25T00:00:00').getTime() / 1000);
+      const actsRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=100&page=1&after=${PLAN_START_TS}`, {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const acts = await actsRes.json();
       idsToProcess = (Array.isArray(acts) ? acts : [])
         .filter(a => a.type === 'Ride' || a.type === 'VirtualRide')
-        .slice(0, 20)
         .map(a => String(a.id));
     }
 
