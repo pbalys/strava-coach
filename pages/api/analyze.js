@@ -239,6 +239,14 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     return d >= prevWeekStart && d < currentWeekStart;
   });
 
+  const week1Start = new Date(PLAN_START);
+  const week1End = new Date(PLAN_START.getTime() + 7*24*3600*1000);
+  const week1RangeStr = `${fmtDate(week1Start)} – ${fmtDate(new Date(week1End.getTime()-1))}`;
+  const week1Acts = (activities || []).filter(a => {
+    const d = new Date(a.start_date_local);
+    return d >= week1Start && d < week1End;
+  });
+
   const restingHRLine = restingHR && restingHR.some(d => d.resting_hr)
     ? `TĘTNO SPOCZYNKOWE (Garmin, ostatnie 7 dni): ${restingHR.filter(d=>d.resting_hr).map(d=>`${d.date}: ${d.resting_hr} BPM`).join(', ')} — trend: ${restingHR.filter(d=>d.resting_hr).length > 1 ? (restingHR.filter(d=>d.resting_hr).at(-1).resting_hr <= restingHR.filter(d=>d.resting_hr)[0].resting_hr ? 'malejący ✓ (dobry sygnał)' : 'rosnący ⚠ (zmęczenie)') : 'za mało danych'}`
     : '';
@@ -250,13 +258,13 @@ WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to
 BEZWZGLĘDNA ZASADA: Dziś jest ${today}. Oceniaj WYŁĄCZNIE dni które już minęły. Sobota, niedziela ani żaden przyszły dzień tego tygodnia NIE może być krytykowany jeśli jeszcze nie nastąpił. Nie pisz "brak jazdy w sobotę" jeśli sobota jeszcze nie była.
 BEZWZGLĘDNA ZASADA: Jeśli TSB w tym tygodniu było < -20 LUB poprzednia analiza zalecała odpoczynek — pominięte treningi S2 NIE są błędem, były wymuszone zmęczeniem. Nie krytykuj za nie.
 BEZWZGLĘDNA ZASADA SPÓJNOŚCI: Sekcja "next_workout" musi być w 100% spójna z sekcją "recommendations". Jeśli recommendations mówi "zero roweru w poniedziałek i wtorek" — next_workout NIE może zawierać jazdy w poniedziałek ani wtorek. Żadnych sprzeczności między sekcjami.
-BEZWZGLĘDNA ZASADA TYGODNI: Tydzień planu NIE jest tygodniem kalendarzowym. Przypisuj aktywności do tygodnia WYŁĄCZNIE na podstawie daty:
-- Tydzień ${weekNum} (BIEŻĄCY, ${weekRangeStr}): TYLKO aktywności z tych dat należą do bieżącego tygodnia
-- Tydzień ${weekNum-1} (POPRZEDNI, ${prevWeekRangeStr}): aktywności z tych dat to poprzedni tydzień
-- Aktywność spoza zakresu bieżącego tygodnia NIE należy do tygodnia ${weekNum} — nie cytuj jej jako "tydzień ${weekNum}"
+BEZWZGLĘDNA ZASADA TYGODNI: Tydzień planu NIE jest tygodniem kalendarzowym. Przypisuj aktywności do tygodnia WYŁĄCZNIE na podstawie daty z poniższych sekcji:
+- Tydzień ${weekNum} (BIEŻĄCY, ${weekRangeStr})
+- Tydzień ${weekNum > 1 ? weekNum-1 : ''} (POPRZEDNI, ${prevWeekRangeStr})
+- Tydzień 1 (${week1RangeStr})
 TEN TYDZIEŃ (Tydzień ${weekNum} planu, ${weekRangeStr}): ${JSON.stringify(actSummary(weekActs||[], 20))}
-POPRZEDNI TYDZIEŃ (Tydzień ${weekNum-1} planu, ${prevWeekRangeStr}): ${JSON.stringify(actSummary(prevWeekActs, 20))}
-STARSZE AKTYWNOŚCI (kontekst — sprzed tygodnia ${weekNum-1}): ${JSON.stringify(actSummary(activities.filter(a => new Date(a.start_date_local) < prevWeekStart), 5))}
+POPRZEDNI TYDZIEŃ (Tydzień ${weekNum > 1 ? weekNum-1 : ''} planu, ${prevWeekRangeStr}): ${JSON.stringify(actSummary(prevWeekActs, 20))}
+TYDZIEŃ 1 (${week1RangeStr}): ${JSON.stringify(actSummary(week1Acts, 20))}
 Dziś: ${today}
 
 Odpowiedz TYLKO JSON bez markdown:
