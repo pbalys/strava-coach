@@ -220,8 +220,14 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     ? `ROZKŁAD STREF HR poprzedni tydzień 7–14 dni temu (dane sekundowe z KV cache, używaj do porównania tydzień-do-tygodnia): ${JSON.stringify(prevWeekZonePcts)}`
     : '';
 
+  const tsbComment = !trainingLoad ? '' :
+    trainingLoad.tsb > -15 ? 'Forma optymalna — dobry moment na mocny trening.' :
+    trainingLoad.tsb > -25 ? 'Zmęczony — trenuj ostrożnie, bez dodatkowej intensywności.' :
+    trainingLoad.tsb > -35 ? 'Wyraźne zmęczenie — ogranicz intensywność, ale trening S2 jest OK.' :
+    'Duże zmęczenie — wskazany pełny odpoczynek lub bardzo lekka jazda.';
   const loadLine = trainingLoad
-    ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${trainingLoad.tsb>10?'Świeży — dobry moment na mocny trening.':trainingLoad.tsb>-10?'Forma neutralna.':trainingLoad.tsb>-25?'Zmęczony, regeneracja w toku — zaplanuj lekki dzień przed kolejną intensywną sesją.':'Duże zmęczenie — priorytet: regeneracja. Słowo przetrenowanie stosuj TYLKO gdy ATL nadal rośnie.'}`
+    ? `OBCIĄŻENIE TRENINGOWE: CTL(fitness)=${trainingLoad.ctl}, ATL(zmęczenie)=${trainingLoad.atl}, TSB(forma)=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${tsbComment}
+ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz "zmęczony". Słowo "przetrenowanie" tylko gdy TSB < -35 przez 3+ dni z rzędu.`
     : '';
 
   const weekNum = currentWeekNum;
@@ -253,7 +259,7 @@ ${prevZonesLine ? prevZonesLine+'\n' : ''}ZASADY OCENY: Przy treningach interwa�
 DANE KV (zones_kv): Jeśli aktywność ma pole zones_kv — to dokładne dane stref z sekundowych streamów (serwer-side cache). Używaj ich do oceny polaryzacji i struktury interwałowej. interval_count_kv to liczba pików >156 BPM trwających >60s.
 WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
 BEZWZGLĘDNA ZASADA: Dziś jest ${today}. Oceniaj WYŁĄCZNIE dni które już minęły. Sobota, niedziela ani żaden przyszły dzień tego tygodnia NIE może być krytykowany jeśli jeszcze nie nastąpił. Nie pisz "brak jazdy w sobotę" jeśli sobota jeszcze nie była.
-BEZWZGLĘDNA ZASADA: Jeśli TSB w tym tygodniu było < -20 LUB poprzednia analiza zalecała odpoczynek — pominięte treningi S2 NIE są błędem, były wymuszone zmęczeniem. Nie krytykuj za nie.
+BEZWZGLĘDNA ZASADA: Jeśli TSB w tym tygodniu było < -25 LUB poprzednia analiza zalecała odpoczynek — pominięte treningi S2 NIE są błędem, były wymuszone zmęczeniem. Nie krytykuj za nie.
 BEZWZGLĘDNA ZASADA SPÓJNOŚCI: Sekcja "next_workout" musi być w 100% spójna z sekcją "recommendations". Jeśli recommendations mówi "zero roweru w poniedziałek i wtorek" — next_workout NIE może zawierać jazdy w poniedziałek ani wtorek. Żadnych sprzeczności między sekcjami.
 BEZWZGLĘDNA ZASADA TYGODNI: Tydzień planu NIE jest tygodniem kalendarzowym. Przypisuj aktywności do tygodnia WYŁĄCZNIE na podstawie daty z poniższych sekcji.
 TEN TYDZIEŃ (Tydzień ${weekNum} planu, ${weekRangeStr}): ${JSON.stringify(actSummary(weekActs||[], 20))}
@@ -262,7 +268,7 @@ ${weekNum > 2 ? `DWA TYGODNIE TEMU (Tydzień ${weekNum-2} planu, ${prev2WeekRang
 Dziś: ${today}
 
 Odpowiedz TYLKO JSON bez markdown:
-{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia planu>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB>","key_issues":["<problem>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co robić>","progress":"<sekcja Postępy: porównaj mierniki z poprzednim tygodniem — polaryzacja S1+S2%, max HR na interwałach, avg HR na długiej jeździe>"}`;
+{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia planu>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB>","key_issues":["<problem>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co robić>","progress":"<Postępy w formacie bullet points BEZ tabel i BEZ znaku |:\n• Polaryzacja S1+S2: X% → Y% — komentarz\n• Interwały max HR: X BPM → Y BPM — komentarz\n• Długa jazda avg HR: X BPM → Y BPM — komentarz\n• Wniosek: jedno zdanie>"}`;
 
   try {
     const text = await callClaude(userPrompt, 2000);

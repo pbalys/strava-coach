@@ -270,9 +270,10 @@ window.loadMore=async()=>{
 async function init(){
   try{
     setStatus('loading','Łączenie ze Stravą...');
-    const [athleteData, actsData] = await Promise.all([
+    const [athleteData, actsData, fitnessData] = await Promise.all([
       apiFetch('/api/athlete'),
-      apiFetch('/api/activities?page=1')
+      apiFetch('/api/activities?page=1'),
+      apiFetch('/api/fitness-history').catch(()=>null)
     ]);
     document.getElementById('athleteName').textContent=athleteData.firstname+' '+athleteData.lastname;
     activities=actsData||[];
@@ -280,7 +281,7 @@ async function init(){
 
     setStatus('loading','Analiza AI w toku...');
     let analysis=null;
-    try{analysis=await apiFetch('/api/analyze',{activities,weekActs});}
+    try{analysis=await apiFetch('/api/analyze',{activities,weekActs,trainingLoad:fitnessData});}
     catch(e){console.warn('AI failed:',e);}
 
     setStatus('ok','Połączono ✓  |  '+new Date().toLocaleTimeString('pl-PL'));
