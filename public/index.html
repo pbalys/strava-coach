@@ -494,15 +494,18 @@ function calcTrainingLoad(acts) {
   const tssMap = {};
   acts.forEach(a => { const d = a.start_date_local.slice(0,10); tssMap[d] = (tssMap[d]||0) + estimateTSS(a); });
   const today = new Date();
-  const days = [];
-  for (let i = 59; i >= 0; i--) { const d = new Date(today); d.setDate(today.getDate()-i); days.push(ds(d)); }
+  // Warm-up 90 dni (ukryte) + 60 dni widocznych = 150 dni total
+  const WARMUP = 90, SHOW = 60, TOTAL = WARMUP + SHOW;
+  const allDays = [];
+  for (let i = TOTAL - 1; i >= 0; i--) { const d = new Date(today); d.setDate(today.getDate()-i); allDays.push(ds(d)); }
   let ctl = 0, atl = 0;
-  return days.map(d => {
+  const allData = allDays.map(d => {
     const tss = tssMap[d] || 0;
     ctl += (tss - ctl) / 42;
     atl += (tss - atl) / 7;
     return { d, tss, ctl, atl, tsb: ctl - atl };
   });
+  return allData.slice(WARMUP); // zwróć tylko widoczne 60 dni
 }
 
 function drawLoadChart(canvas, data) {
@@ -849,14 +852,14 @@ function renderMain(weekActs,last7Acts,analysis,accZones,aiError){
   document.getElementById('atlVal').textContent=atl;
   document.getElementById('tsbVal').textContent=tsbSign+tsb;
   let tsbColor,tsbLabel,tsbMsg;
-  if(tsb>10){tsbColor='#00d4aa';tsbLabel='Świeży';badge.style.cssText+=';background:#0a2a0a;color:#00d4aa';badge.firstChild.textContent='Świeży ';
-    tsbMsg=`TSB ${tsbSign}${tsb} — jesteś świeży i wypoczęty. Dobry moment na mocny trening lub start w zawodach.`;}
-  else if(tsb>-10){tsbColor='#f5c518';tsbLabel='Neutralny';badge.style.cssText+=';background:#2a2000;color:#f5c518';badge.firstChild.textContent='Neutralny ';
-    tsbMsg=`TSB ${tsbSign}${tsb} — forma neutralna, trening adaptuje się normalnie. Możesz trenować zgodnie z planem.`;}
-  else if(tsb>-25){tsbColor='#ffa500';tsbLabel='Zmęczony';badge.style.cssText+=';background:#2a1200;color:#ffa500';badge.firstChild.textContent='Zmęczony ';
-    tsbMsg=`TSB ${tsb} — wyraźne zmęczenie. Zmęczenie (${atl}) rośnie szybciej niż adaptacja (${ctl}). Zaplanuj dzień regeneracyjny przed kolejną mocną sesją.`;}
-  else{tsbColor='#ff4444';tsbLabel='Przeciążony';badge.style.cssText+=';background:#2a0808;color:#ff4444';badge.firstChild.textContent='Przeciążony ';
-    tsbMsg=`TSB ${tsb} — mocne przeciążenie. Zmęczenie (${atl}) jest ${atl-ctl} pkt powyżej bazy fitness (${ctl}). Priorytet: 3–4 dni spokojnego treningu lub odpoczynku zanim wrócisz do interwałów.`;}
+  if(tsb>-15){tsbColor='#00d4aa';tsbLabel='Świeży';badge.style.cssText+=';background:#0a2a0a;color:#00d4aa';badge.firstChild.textContent='Świeży ';
+    tsbMsg=`TSB ${tsbSign}${tsb} — forma optymalna. Dobry moment na mocny trening.`;}
+  else if(tsb>-25){tsbColor='#f5c518';tsbLabel='Zmęczony';badge.style.cssText+=';background:#2a2000;color:#f5c518';badge.firstChild.textContent='Zmęczony ';
+    tsbMsg=`TSB ${tsb} — zmęczony. Trenuj ostrożnie, bez dodatkowej intensywności. Jazda S2 jest OK.`;}
+  else if(tsb>-35){tsbColor='#ffa500';tsbLabel='Wyraźne zmęczenie';badge.style.cssText+=';background:#2a1200;color:#ffa500';badge.firstChild.textContent='Zmęczony ';
+    tsbMsg=`TSB ${tsb} — wyraźne zmęczenie. Ogranicz intensywność, ale S2 jest nadal dozwolone.`;}
+  else{tsbColor='#ff4444';tsbLabel='Odpoczynek';badge.style.cssText+=';background:#2a0808;color:#ff4444';badge.firstChild.textContent='Odpoczynek ';
+    tsbMsg=`TSB ${tsb} — duże zmęczenie. Priorytet: odpoczynek lub bardzo lekka jazda zanim wrócisz do interwałów.`;}
   document.getElementById('tsbInterpret').textContent=tsbMsg;
   setTimeout(()=>drawLoadChart(document.getElementById('loadChart'),loadData),50);
 }
