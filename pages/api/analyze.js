@@ -273,7 +273,7 @@ ${weekNum > 2 ? `DWA TYGODNIE TEMU (Tydzień ${weekNum-2} planu, ${prev2WeekRang
 Dziś: ${today}
 
 Odpowiedz TYLKO JSON bez markdown:
-{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia planu>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB>","key_issues":["<problem>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co robić>","progress":"<Postępy w formacie bullet points BEZ tabel i BEZ znaku |:\n• Polaryzacja S1+S2: X% → Y% — komentarz\n• Interwały max HR: X BPM → Y BPM — komentarz\n• Długa jazda avg HR: X BPM → Y BPM — komentarz\n• Wniosek: jedno zdanie>"}`;
+{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia planu>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB>","key_issues":["<problem>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co robić>","progress":"<Postępy w formacie bullet points BEZ tabel i BEZ znaku |. ZACZNIJ od realizacji planu poprzedniego tygodnia: policz ile z 3 zaplanowanych sesji (wtorek interwały, czwartek S2, sobota/niedziela długa jazda) faktycznie się odbyło — podaj konkretną liczbę np. '1/3 sesji'. NIE pisz 'pełna realizacja' jeśli brakuje sesji. Następnie:\n• Realizacja planu T${weekNum-1}: X/3 sesji — co było, czego brakowało\n• Polaryzacja S1+S2: X% → Y% — komentarz\n• Interwały max HR: X BPM → Y BPM — komentarz\n• Długa jazda avg HR: X BPM/km — komentarz\n• Wniosek: jedno zdanie>"}`;
 
   try {
     const text = await callClaude(userPrompt, 2000);
