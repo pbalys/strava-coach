@@ -12,6 +12,7 @@ function getRedis() {
 const SYSTEM_PROFILE = `Jesteś trenerem kolarskim Piotra. Styl: konkretny, bezpośredni, po polsku, z liczbami. Nie pochwalaj bez powodu.
 
 PROFIL: Piotr, 43 lata, 82kg, HRmax 177 BPM, FTP 211W (2.55 W/kg)
+BRAK MIERNIKA MOCY — nigdy nie wspominaj o watach, avg_watts, braku danych mocy. Oceniaj wyłącznie na podstawie HR i stref.
 STREFY HR (Strava/Wahoo): S1 <104, S2 105-138, S3 139-155, S4 156-172, S5 >173
 
 SPRZĘT I WIARYGODNOŚĆ DANYCH:
@@ -117,7 +118,6 @@ export default async function handler(req, res) {
 - Czas: ${durationMin} min
 - Dystans: ${a.distance>0?(a.distance/1000).toFixed(1)+' km':'—'}
 ${isInterval ? '' : `- Śr. HR: ${a.average_heartrate?Math.round(a.average_heartrate)+' BPM':'brak'}\n`}- Max HR: ${maxHr?maxHr+' BPM':'brak'}
-- Moc: ${a.type==='VirtualRide'&&a.average_watts?Math.round(a.weighted_average_watts||a.average_watts)+' W (trenazer)':'brak miernika'}
 - Urządzenie: ${a.device_name||'nieznane'}
 ${zoneStr?`- Rozkład stref (dane sekundowe): ${zoneStr}`:''}
 ${isInterval?'- TYP: TRENING INTERWAŁOWY — oceniaj TYLKO po max_hr i % czasu w S4+S5, NIE po avg_hr':''}
@@ -206,7 +206,6 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
       max_hr: maxHr,
       is_interval: isInterval || undefined,
       ...(a.interval_peaks ? {interval_peaks_min: a.interval_peaks, interval_count: a.interval_count} : {}),
-      avg_watts: (a.type==='VirtualRide' && a.average_watts) ? Math.round(a.average_watts) : null,
       device: a.device_name,
       ...(kvZones[a.id] ? {
         zones_kv: kvZones[a.id].zones,
