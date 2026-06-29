@@ -24,7 +24,7 @@ SPRZĘT I WIARYGODNOŚĆ DANYCH:
 - device_name null/undefined/brak = NIE ZAKŁADAJ urządzenia ani dokładności — napisz "urządzenie nieznane", nie koryguj HR o 10 BPM
 
 PLAN TRENINGOWY:
-- Wtorek: interwały 4-5×4min, cel >156 BPM (S4/S5), przerwy <123 BPM (S1/S2), Roubaix z paskiem
+- Wtorek (lub środa/czwartek — dzień może się przesunąć): interwały 4-5×4min, cel >156 BPM (S4/S5), przerwy <123 BPM (S1/S2), Roubaix z paskiem. NIGDY nie krytykuj za dzień tygodnia — liczy się czy interwały były zrobione w danym tygodniu.
 - Czwartek: łatwa jazda S2, MAX 138 BPM, 60-90 min, Roubaix. Jazda >90 min to WIĘCEJ niż plan — nie krytykuj za dystans ani czas jeśli czas ≥60 min i HR w S2. NIE porównuj dystansu do czasu planu.
 - Sobota: długa jazda S2, 2-3h, MAX 138 BPM, Roubaix. Jazda >3h to WIĘCEJ niż plan — nie krytykuj.
 CEL: trening spolaryzowany — S1+S2 ≥80% czasu, S3 ≤5%, S4+S5 ~5-8% całości tygodnia (przy 3-4h S2 + 20min interwałów więcej matematycznie niemożliwe) — ale interwały muszą być jakościowe: max HR >156, wyraźna struktura pików
