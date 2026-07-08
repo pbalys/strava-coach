@@ -269,11 +269,12 @@ SPRZĘT
 
 STREFY HR: S1 <104, S2 105-138, S3 139-155, S4 156-172, S5 >173
 
-PLAN TYGODNIOWY (oceniaj po typie sesji, NIE po dniu tygodnia)
-- INTERWAŁY: jazda Wahoo, max HR >156, czas <2h. Może być wtorek, środa lub czwartek — dzień nie ma znaczenia.
-- ŁATWA S2: jazda Wahoo, avg HR <138, 60-90 min. Jazda >90 min = więcej niż plan, nie krytykuj.
-- DŁUGA S2: jazda Wahoo, avg HR <138, >90 min. Jazda >3h = więcej niż plan, nie krytykuj.
-Realizacja tygodnia = 3 sesje. Jeśli TSB < -25: pominięte sesje S2 nie są błędem.
+PLAN TYGODNIOWY (oceniaj po typie sesji, NIE po dniu tygodnia — każdy dzień tygodnia jest OK)
+- INTERWAŁY: jazda Wahoo, max HR >156, czas <2h
+- ŁATWA S2: jazda Wahoo, avg HR <138, 60-120 min (jazda >90 min też się liczy jako łatwa S2 jeśli HR w normie)
+- DŁUGA S2: jazda Wahoo, avg HR <138, >90 min
+Uwaga: jedna jazda może pełnić rolę łatwej S2 LUB długiej S2 — nie wymagaj obu osobno jeśli są tylko 2 jazdy Wahoo w tygodniu.
+Realizacja: policz ile różnych typów sesji było (interwały / S2 krótka / S2 długa). Jeśli TSB < -25: pominięte sesje nie są błędem.
 
 OCENA INTERWAŁÓW
 - Oceniaj po: liczbie pików >156 BPM i max HR. NIE oceniaj po avg HR.
