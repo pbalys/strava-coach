@@ -259,21 +259,47 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
     ? `TĘTNO SPOCZYNKOWE (Garmin, ostatnie 7 dni): ${restingHR.filter(d=>d.resting_hr).map(d=>`${d.date}: ${d.resting_hr} BPM`).join(', ')} — trend: ${restingHR.filter(d=>d.resting_hr).length > 1 ? (restingHR.filter(d=>d.resting_hr).at(-1).resting_hr <= restingHR.filter(d=>d.resting_hr)[0].resting_hr ? 'malejący ✓ (dobry sygnał)' : 'rosnący ⚠ (zmęczenie)') : 'za mało danych'}`
     : '';
 
-  const userPrompt = `${loadLine ? loadLine+'\n' : ''}${restingHRLine ? restingHRLine+'\n' : ''}${zonesLine}
-${prevZonesLine ? prevZonesLine+'\n' : ''}ZASADY OCENY: Przy treningach interwałowych (is_interval=true) avg_hr jest nieistotna. Polaryzację oceniaj WYŁĄCZNIE z danych sekundowych stref.
-DANE KV (zones_kv): Jeśli aktywność ma pole zones_kv — to dokładne dane stref z sekundowych streamów (serwer-side cache). Używaj ich do oceny polaryzacji i struktury interwałowej. interval_count_kv to liczba pików >156 BPM trwających >60s.
-WAŻNE: Jeśli aktywność ma wyraźne piki HR >156 BPM z przerwami do S2 — to interwały, niezależnie od dnia tygodnia. Nie krytykuj za dzień tygodnia jeśli struktura jest prawidłowa. Piotr czasem przesuwa wtorek na środę lub czwartek z powodów życiowych.
-BEZWZGLĘDNA ZASADA: Dziś jest ${today}. Oceniaj WYŁĄCZNIE dni które już minęły. Sobota, niedziela ani żaden przyszły dzień tego tygodnia NIE może być krytykowany jeśli jeszcze nie nastąpił. Nie pisz "brak jazdy w sobotę" jeśli sobota jeszcze nie była.
-BEZWZGLĘDNA ZASADA: Jeśli TSB w tym tygodniu było < -25 LUB poprzednia analiza zalecała odpoczynek — pominięte treningi S2 NIE są błędem, były wymuszone zmęczeniem. Nie krytykuj za nie.
-BEZWZGLĘDNA ZASADA SPÓJNOŚCI: Sekcja "next_workout" musi być w 100% spójna z sekcją "recommendations". Jeśli recommendations mówi "zero roweru w poniedziałek i wtorek" — next_workout NIE może zawierać jazdy w poniedziałek ani wtorek. Żadnych sprzeczności między sekcjami.
-BEZWZGLĘDNA ZASADA TYGODNI: Tydzień planu NIE jest tygodniem kalendarzowym. Przypisuj aktywności do tygodnia WYŁĄCZNIE na podstawie daty z poniższych sekcji.
-TEN TYDZIEŃ (Tydzień ${weekNum} planu, ${weekRangeStr}): ${JSON.stringify(actSummary(weekActs||[], 20))}
-POPRZEDNI TYDZIEŃ (Tydzień ${weekNum-1} planu, ${prevWeekRangeStr}): ${JSON.stringify(actSummary(prevWeekActs, 20))}
-${weekNum > 2 ? `DWA TYGODNIE TEMU (Tydzień ${weekNum-2} planu, ${prev2WeekRangeStr}): ${JSON.stringify(actSummary(prev2WeekActs, 20))}` : ''}
-Dziś: ${today}
+  const userPrompt = `KONTEKST
+Piotr, 43 lata, 82kg, HRmax 177, FTP 211W, cel: wróć do 221W+. Plan spolaryzowany od 25 maja 2026. Zerwanie Achillesa grudzień 2023, powrót wiosna 2024. Dziś: ${today}, Tydzień ${weekNum} planu.
+
+SPRZĘT
+- Wahoo ELEMNT BOLT = Specialized Roubaix + pasek piersiowy = dane HR wiarygodne w 100%
+- Garmin Instinct 2 = Cube (dojazdówki do pracy) lub bieganie = HR zaniżone ~10 BPM, nie liczy się jako trening
+- Dojazdówka = Garmin + dystans <15 km + avg HR <115 BPM: ignoruj przy ocenie planu i zmęczenia
+
+STREFY HR: S1 <104, S2 105-138, S3 139-155, S4 156-172, S5 >173
+
+PLAN TYGODNIOWY (oceniaj po typie sesji, NIE po dniu tygodnia)
+- INTERWAŁY: jazda Wahoo, max HR >156, czas <2h. Może być wtorek, środa lub czwartek — dzień nie ma znaczenia.
+- ŁATWA S2: jazda Wahoo, avg HR <138, 60-90 min. Jazda >90 min = więcej niż plan, nie krytykuj.
+- DŁUGA S2: jazda Wahoo, avg HR <138, >90 min. Jazda >3h = więcej niż plan, nie krytykuj.
+Realizacja tygodnia = 3 sesje. Jeśli TSB < -25: pominięte sesje S2 nie są błędem.
+
+OCENA INTERWAŁÓW
+- Oceniaj po: liczbie pików >156 BPM i max HR. NIE oceniaj po avg HR.
+- Jeśli zones_kv dostępne: użyj interval_count_kv jako liczby pików.
+- S3 podczas opadania HR między interwałami = fizjologia, nie błąd.
+- Przerwy <123 BPM = poprawna regeneracja.
+
+POLARYZACJA (tylko jazdy Wahoo, dane sekundowe z zones_kv)
+Cel: S1+S2 ≥ 80%, S3 ≤ 5%, S4+S5 ~5-8%
+${zonesLine}
+${prevZonesLine ? prevZonesLine : ''}
+OBCIĄŻENIE: ${trainingLoad ? `CTL=${trainingLoad.ctl}, ATL=${trainingLoad.atl}, TSB=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${tsbComment}` : 'brak danych.'}
+Progi TSB: >-15 optymalna | -15/-25 zmęczony | -25/-35 ogranicz intensywność S2 dozwolone | <-35 odpoczynek. Nie używaj "przeciążony" przy TSB >-30.
+${restingHRLine ? restingHRLine+'\n' : ''}
+DANE AKTYWNOŚCI (przypisuj do tygodnia wyłącznie na podstawie dat poniżej)
+TYDZIEŃ ${weekNum} — BIEŻĄCY (${weekRangeStr}): ${JSON.stringify(actSummary(weekActs||[], 20))}
+TYDZIEŃ ${weekNum-1} — POPRZEDNI (${prevWeekRangeStr}): ${JSON.stringify(actSummary(prevWeekActs, 20))}
+${weekNum > 2 ? `TYDZIEŃ ${weekNum-2} (${prev2WeekRangeStr}): ${JSON.stringify(actSummary(prev2WeekActs, 20))}` : ''}
+
+ZASADY
+- Oceniaj wyłącznie minione dni. Nie krytykuj za brak sesji w dniu który jeszcze nie nastąpił.
+- next_workout musi być spójny z recommendations — zero sprzeczności.
+- Nie wspominaj o mocy ani watach.
 
 Odpowiedz TYLKO JSON bez markdown:
-{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia planu>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB>","key_issues":["<problem>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co robić>","progress":"<Postępy w formacie bullet points BEZ tabel i BEZ znaku |. ZACZNIJ od realizacji planu poprzedniego tygodnia: policz ile z 3 zaplanowanych sesji (wtorek interwały, czwartek S2, sobota/niedziela długa jazda) faktycznie się odbyło — podaj konkretną liczbę np. '1/3 sesji'. NIE pisz 'pełna realizacja' jeśli brakuje sesji. Następnie:\n• Realizacja planu T${weekNum-1}: X/3 sesji — co było, czego brakowało\n• Polaryzacja S1+S2: X% → Y% — komentarz\n• Interwały max HR: X BPM → Y BPM — komentarz\n• Długa jazda avg HR: X BPM/km — komentarz\n• Wniosek: jedno zdanie>"}`;
+{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB i CTL>","key_issues":["<konkretny problem z liczbami>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co konkretnie robić>","progress":"<bullet points:\n• Realizacja T${weekNum-1}: X/3 sesji — co było, czego brakowało\n• Polaryzacja S1+S2: X% → Y% — komentarz\n• Interwały: X BPM / X pików → Y BPM / Y pików — komentarz\n• Długa jazda: X BPM / X km → Y BPM / Y km — komentarz\n• Wniosek: jedno zdanie>"}`;
 
   try {
     const text = await callClaude(userPrompt, 2000);
