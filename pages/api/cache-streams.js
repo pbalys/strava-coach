@@ -24,18 +24,29 @@ function calcZonesFromStreams(hrData, timeData) {
   return { counts, total };
 }
 
-function countPeaks(hrData, timeData, threshold=156, minDurSec=60) {
-  let peaks = [], inPeak = false, peakStart = 0;
+function countPeaks(hrData, timeData, threshold=156, minDurSec=60, graceSec=15) {
+  let peaks = [], inPeak = false, peakStart = 0, belowSince = null;
   for (let i = 0; i < hrData.length; i++) {
-    if (!inPeak && hrData[i] >= threshold) { inPeak = true; peakStart = timeData[i]; }
-    else if (inPeak && hrData[i] < threshold) {
-      const dur = timeData[i] - peakStart;
-      if (dur >= minDurSec) peaks.push(Math.round(dur / 60));
-      inPeak = false;
+    const t = timeData[i], hr = hrData[i];
+    if (!inPeak) {
+      if (hr >= threshold) { inPeak = true; peakStart = t; belowSince = null; }
+    } else {
+      if (hr >= threshold) {
+        belowSince = null; // back above threshold, reset grace
+      } else {
+        if (belowSince === null) belowSince = t;
+        if (t - belowSince >= graceSec) {
+          // been below threshold long enough — end the peak
+          const dur = belowSince - peakStart;
+          if (dur >= minDurSec) peaks.push(Math.round(dur / 60));
+          inPeak = false; belowSince = null;
+        }
+      }
     }
   }
   if (inPeak) {
-    const dur = timeData[timeData.length - 1] - peakStart;
+    const endT = belowSince || timeData[timeData.length - 1];
+    const dur = endT - peakStart;
     if (dur >= minDurSec) peaks.push(Math.round(dur / 60));
   }
   return peaks;
