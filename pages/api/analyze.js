@@ -217,6 +217,33 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
 
   const today = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
 
+  // Count previous week sessions in code — don't rely on Claude to count
+  function classifyWahooActs(acts) {
+    const wahoo = acts.filter(a => a.device_name === 'Wahoo ELEMNT BOLT');
+    const intervals = wahoo.filter(a => {
+      const dur = Math.round(a.moving_time/60);
+      const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : 0;
+      return dur < 120 && maxHr > 156;
+    });
+    const s2rides = wahoo.filter(a => {
+      const dur = Math.round(a.moving_time/60);
+      const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : 0;
+      const avgHr = a.average_heartrate ? Math.round(a.average_heartrate) : 999;
+      return !(dur < 120 && maxHr > 156) && avgHr < 138 && dur >= 60;
+    });
+    const longS2 = s2rides.filter(a => Math.round(a.moving_time/60) > 90);
+    const shortS2 = s2rides.filter(a => Math.round(a.moving_time/60) <= 90);
+    return { intervals, longS2, shortS2, total: wahoo.length };
+  }
+
+  const prevWeekSessions = classifyWahooActs(prevWeekActs);
+  const prevWeekSessionSummary = [
+    prevWeekSessions.intervals.length > 0 ? `interwały ✓ (${prevWeekSessions.intervals.length}x, max HR ${Math.max(...prevWeekSessions.intervals.map(a => a.max_heartrate||0))} BPM)` : 'interwały ✗',
+    prevWeekSessions.longS2.length > 0 ? `długa S2 ✓ (${prevWeekSessions.longS2.length}x)` : prevWeekSessions.shortS2.length > 0 ? `łatwa S2 ✓ (${prevWeekSessions.shortS2.length}x, brak długiej)` : 'S2 ✗',
+  ].join(', ');
+  const prevWeekScore = (prevWeekSessions.intervals.length > 0 ? 1 : 0) + (prevWeekSessions.s2rides?.length > 0 || prevWeekSessions.longS2.length > 0 || prevWeekSessions.shortS2.length > 0 ? 1 : 0) + (prevWeekSessions.longS2.length > 0 ? 1 : 0);
+  const prevWeekScoreStr = `${Math.min(prevWeekScore, 3)}/3 sesji`;
+
   const zonesLine = weekZonePcts
     ? `ROZKŁAD STREF HR ostatnie 7 dni (dane sekundowe, dokładne — używaj do oceny polaryzacji): ${JSON.stringify(weekZonePcts)}`
     : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr jest NIEUŻYTECZNA dla polaryzacji przy interwałach.`;
@@ -289,6 +316,9 @@ ${prevZonesLine ? prevZonesLine : ''}
 OBCIĄŻENIE: ${trainingLoad ? `CTL=${trainingLoad.ctl}, ATL=${trainingLoad.atl}, TSB=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${tsbComment}` : 'brak danych.'}
 Progi TSB: >-15 optymalna | -15/-25 zmęczony | -25/-35 ogranicz intensywność S2 dozwolone | <-35 odpoczynek. Nie używaj "przeciążony" przy TSB >-30.
 ${restingHRLine ? restingHRLine+'\n' : ''}
+REALIZACJA T${weekNum-1} (WYLICZONA W KODZIE — używaj tej liczby, nie licz sam):
+${prevWeekScoreStr}: ${prevWeekSessionSummary}
+
 DANE AKTYWNOŚCI (przypisuj do tygodnia wyłącznie na podstawie dat poniżej)
 TYDZIEŃ ${weekNum} — BIEŻĄCY (${weekRangeStr}): ${JSON.stringify(actSummary(weekActs||[], 20))}
 TYDZIEŃ ${weekNum-1} — POPRZEDNI (${prevWeekRangeStr}): ${JSON.stringify(actSummary(prevWeekActs, 20))}
@@ -300,7 +330,7 @@ ZASADY
 - Nie wspominaj o mocy ani watach.
 
 Odpowiedz TYLKO JSON bez markdown:
-{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB i CTL>","key_issues":["<konkretny problem z liczbami>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co konkretnie robić>","progress":"<bullet points:\n• Realizacja T${weekNum-1}: X/3 sesji — co było, czego brakowało\n• Polaryzacja S1+S2: X% → Y% — komentarz\n• Interwały: X BPM / X pików → Y BPM / Y pików — komentarz\n• Długa jazda: X BPM / X km → Y BPM / Y km — komentarz\n• Wniosek: jedno zdanie>"}`;
+{"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB i CTL>","key_issues":["<konkretny problem z liczbami>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co konkretnie robić>","progress":"<bullet points:\n• Realizacja T${weekNum-1}: ${prevWeekScoreStr} — ${prevWeekSessionSummary}\n• Polaryzacja S1+S2: X% → Y% — komentarz\n• Interwały: X BPM / X pików → Y BPM / Y pików — komentarz\n• Długa jazda: X BPM / X km → Y BPM / Y km — komentarz\n• Wniosek: jedno zdanie>"}`;
 
   try {
     const text = await callClaude(userPrompt, 2000);
