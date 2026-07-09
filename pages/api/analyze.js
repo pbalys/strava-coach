@@ -241,7 +241,7 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     prevWeekSessions.intervals.length > 0 ? `interwały ✓ (${prevWeekSessions.intervals.length}x, max HR ${Math.max(...prevWeekSessions.intervals.map(a => a.max_heartrate||0))} BPM)` : 'interwały ✗',
     prevWeekSessions.longS2.length > 0 ? `długa S2 ✓ (${prevWeekSessions.longS2.length}x)` : prevWeekSessions.shortS2.length > 0 ? `łatwa S2 ✓ (${prevWeekSessions.shortS2.length}x, brak długiej)` : 'S2 ✗',
   ].join(', ');
-  const prevWeekScore = (prevWeekSessions.intervals.length > 0 ? 1 : 0) + (prevWeekSessions.s2rides?.length > 0 || prevWeekSessions.longS2.length > 0 || prevWeekSessions.shortS2.length > 0 ? 1 : 0) + (prevWeekSessions.longS2.length > 0 ? 1 : 0);
+  const prevWeekScore = (prevWeekSessions.intervals.length > 0 ? 1 : 0) + (prevWeekSessions.shortS2.length > 0 ? 1 : 0) + (prevWeekSessions.longS2.length > 0 ? 1 : 0);
   const prevWeekScoreStr = `${Math.min(prevWeekScore, 3)}/3 sesji`;
 
   const zonesLine = weekZonePcts
