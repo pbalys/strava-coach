@@ -217,33 +217,6 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
 
   const today = new Date().toLocaleDateString('pl-PL', {weekday:'long', day:'numeric', month:'long'});
 
-  // Count previous week sessions in code — don't rely on Claude to count
-  function classifyWahooActs(acts) {
-    const wahoo = acts.filter(a => a.device_name === 'Wahoo ELEMNT BOLT');
-    const intervals = wahoo.filter(a => {
-      const dur = Math.round(a.moving_time/60);
-      const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : 0;
-      return dur < 120 && maxHr > 156;
-    });
-    const s2rides = wahoo.filter(a => {
-      const dur = Math.round(a.moving_time/60);
-      const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : 0;
-      const avgHr = a.average_heartrate ? Math.round(a.average_heartrate) : 999;
-      return !(dur < 120 && maxHr > 156) && avgHr < 138 && dur >= 60;
-    });
-    const longS2 = s2rides.filter(a => Math.round(a.moving_time/60) > 90);
-    const shortS2 = s2rides.filter(a => Math.round(a.moving_time/60) <= 90);
-    return { intervals, longS2, shortS2, total: wahoo.length };
-  }
-
-  const prevWeekSessions = classifyWahooActs(prevWeekActs);
-  const prevWeekSessionSummary = [
-    prevWeekSessions.intervals.length > 0 ? `interwały ✓ (${prevWeekSessions.intervals.length}x, max HR ${Math.max(...prevWeekSessions.intervals.map(a => a.max_heartrate||0))} BPM)` : 'interwały ✗',
-    prevWeekSessions.longS2.length > 0 ? `długa S2 ✓ (${prevWeekSessions.longS2.length}x)` : prevWeekSessions.shortS2.length > 0 ? `łatwa S2 ✓ (${prevWeekSessions.shortS2.length}x, brak długiej)` : 'S2 ✗',
-  ].join(', ');
-  const prevWeekScore = (prevWeekSessions.intervals.length > 0 ? 1 : 0) + (prevWeekSessions.shortS2.length > 0 ? 1 : 0) + (prevWeekSessions.longS2.length > 0 ? 1 : 0);
-  const prevWeekScoreStr = `${Math.min(prevWeekScore, 3)}/3 sesji`;
-
   const zonesLine = weekZonePcts
     ? `ROZKŁAD STREF HR ostatnie 7 dni (dane sekundowe, dokładne — używaj do oceny polaryzacji): ${JSON.stringify(weekZonePcts)}`
     : `UWAGA: brak dokładnych danych stref. Używaj max_hr do oceny intensywności — avg_hr jest NIEUŻYTECZNA dla polaryzacji przy interwałach.`;
@@ -281,6 +254,32 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
     const d = new Date(a.start_date_local);
     return d >= prev2WeekStart && d < prevWeekStart;
   }) : [];
+
+  // Count previous week sessions in code — don't rely on Claude to count
+  function classifyWahooActs(acts) {
+    const wahoo = acts.filter(a => a.device_name === 'Wahoo ELEMNT BOLT');
+    const intervals = wahoo.filter(a => {
+      const dur = Math.round(a.moving_time/60);
+      const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : 0;
+      return dur < 120 && maxHr > 156;
+    });
+    const s2rides = wahoo.filter(a => {
+      const dur = Math.round(a.moving_time/60);
+      const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : 0;
+      const avgHr = a.average_heartrate ? Math.round(a.average_heartrate) : 999;
+      return !(dur < 120 && maxHr > 156) && avgHr < 138 && dur >= 60;
+    });
+    const longS2 = s2rides.filter(a => Math.round(a.moving_time/60) > 90);
+    const shortS2 = s2rides.filter(a => Math.round(a.moving_time/60) <= 90);
+    return { intervals, longS2, shortS2 };
+  }
+  const prevWeekSessions = classifyWahooActs(prevWeekActs);
+  const prevWeekSessionSummary = [
+    prevWeekSessions.intervals.length > 0 ? `interwały ✓ (${prevWeekSessions.intervals.length}x, max HR ${Math.max(...prevWeekSessions.intervals.map(a => a.max_heartrate||0))} BPM)` : 'interwały ✗',
+    prevWeekSessions.longS2.length > 0 ? `długa S2 ✓ (${prevWeekSessions.longS2.length}x)` : prevWeekSessions.shortS2.length > 0 ? `łatwa S2 ✓ (${prevWeekSessions.shortS2.length}x, brak długiej)` : 'S2 ✗',
+  ].join(', ');
+  const prevWeekScore = (prevWeekSessions.intervals.length > 0 ? 1 : 0) + (prevWeekSessions.shortS2.length > 0 ? 1 : 0) + (prevWeekSessions.longS2.length > 0 ? 1 : 0);
+  const prevWeekScoreStr = `${Math.min(prevWeekScore, 3)}/3 sesji`;
 
   const restingHRLine = restingHR && restingHR.some(d => d.resting_hr)
     ? `TĘTNO SPOCZYNKOWE (Garmin, ostatnie 7 dni): ${restingHR.filter(d=>d.resting_hr).map(d=>`${d.date}: ${d.resting_hr} BPM`).join(', ')} — trend: ${restingHR.filter(d=>d.resting_hr).length > 1 ? (restingHR.filter(d=>d.resting_hr).at(-1).resting_hr <= restingHR.filter(d=>d.resting_hr)[0].resting_hr ? 'malejący ✓ (dobry sygnał)' : 'rosnący ⚠ (zmęczenie)') : 'za mało danych'}`
