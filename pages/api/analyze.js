@@ -274,11 +274,18 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
     return { intervals, longS2, shortS2 };
   }
   const currWeekSessions = classifyWahooActs(weekActs || []);
-  const currWeekScore = (currWeekSessions.intervals.length > 0 ? 1 : 0) + (currWeekSessions.shortS2.length > 0 ? 1 : 0) + (currWeekSessions.longS2.length > 0 ? 1 : 0);
+  const hasIntervals = currWeekSessions.intervals.length > 0;
+  const hasLongS2 = currWeekSessions.longS2.length > 0;
+  const hasShortS2 = currWeekSessions.shortS2.length > 0;
+  const currWeekScore = (hasIntervals ? 1 : 0) + (hasShortS2 ? 1 : 0) + (hasLongS2 ? 1 : 0);
   const currWeekRemaining = Math.max(0, 3 - currWeekScore);
+  const missingTypes = [];
+  if (!hasIntervals) missingTypes.push('interwały (Wahoo, max HR >156, <2h)');
+  if (!hasLongS2) missingTypes.push('długa S2 (Wahoo, avg HR <138, >90 min)');
+  else if (!hasShortS2) missingTypes.push('łatwa S2 (Wahoo, avg HR <138, 60-90 min)');
   const currWeekSessionSummary = [
-    currWeekSessions.intervals.length > 0 ? `interwały ✓ (${currWeekSessions.intervals.length}x)` : 'interwały ✗',
-    currWeekSessions.longS2.length > 0 ? `długa S2 ✓` : currWeekSessions.shortS2.length > 0 ? `łatwa S2 ✓` : 'S2 ✗',
+    hasIntervals ? `interwały ✓ (${currWeekSessions.intervals.length}x)` : 'interwały ✗',
+    hasLongS2 ? `długa S2 ✓ (${currWeekSessions.longS2.length}x)` : hasShortS2 ? `łatwa S2 ✓ (${currWeekSessions.shortS2.length}x, brak długiej)` : 'S2 ✗',
   ].join(', ');
 
   const prevWeekSessions = classifyWahooActs(prevWeekActs);
@@ -314,6 +321,7 @@ OCENA INTERWAŁÓW
 - Oceniaj po: liczbie pików >156 BPM i max HR. NIE oceniaj po avg HR.
 - Jeśli zones_kv dostępne: użyj interval_count_kv jako liczby pików, interval_peaks_kv jako listy długości (minuty).
 - 4 piki = dolna granica celu (4-5) = SPEŁNIONY CEL, nie krytykuj za "tylko 4".
+- Interwał ZALICZONY jeśli max HR >156 BPM — czyli 170 BPM to przekroczenie progu, nie brak przekroczenia.
 - Długość piku: odczytaj z interval_peaks_kv (np. [4,4,3,4] = trzy piki po 4 min). NIE zgaduj długości — używaj danych.
 - S3 podczas opadania HR między interwałami = fizjologia, nie błąd.
 - Przerwy <123 BPM = poprawna regeneracja.
@@ -327,7 +335,7 @@ Progi TSB: >-15 optymalna | -15/-25 zmęczony | -25/-35 ogranicz intensywność 
 ${restingHRLine ? restingHRLine+'\n' : ''}
 REALIZACJA T${weekNum} BIEŻĄCY TYDZIEŃ (WYLICZONA W KODZIE — używaj tej liczby, nie licz sam):
 ${currWeekScore}/3 sesji zrobionych: ${currWeekSessionSummary}
-Pozostało do zrobienia: ${currWeekRemaining} sesja(e). Zalecaj DOKŁADNIE ${currWeekRemaining} sesję(e) — nie więcej, nie mniej.
+Pozostało do zrobienia: ${currWeekRemaining} sesja(e). Brakujące typy: ${missingTypes.length > 0 ? missingTypes.join(' + ') : 'brak — plan tygodnia zrealizowany'}. Zalecaj DOKŁADNIE te typy sesji — nie więcej, nie mniej.
 
 REALIZACJA T${weekNum-1} (WYLICZONA W KODZIE — używaj tej liczby, nie licz sam):
 ${prevWeekScoreStr}: ${prevWeekSessionSummary}
