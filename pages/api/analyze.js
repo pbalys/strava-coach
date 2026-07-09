@@ -304,7 +304,9 @@ Realizacja: policz ile różnych typów sesji było (interwały / S2 krótka / S
 
 OCENA INTERWAŁÓW
 - Oceniaj po: liczbie pików >156 BPM i max HR. NIE oceniaj po avg HR.
-- Jeśli zones_kv dostępne: użyj interval_count_kv jako liczby pików.
+- Jeśli zones_kv dostępne: użyj interval_count_kv jako liczby pików, interval_peaks_kv jako listy długości (minuty).
+- 4 piki = dolna granica celu (4-5) = SPEŁNIONY CEL, nie krytykuj za "tylko 4".
+- Długość piku: odczytaj z interval_peaks_kv (np. [4,4,3,4] = trzy piki po 4 min). NIE zgaduj długości — używaj danych.
 - S3 podczas opadania HR między interwałami = fizjologia, nie błąd.
 - Przerwy <123 BPM = poprawna regeneracja.
 
