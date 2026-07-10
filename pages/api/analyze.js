@@ -339,6 +339,11 @@ OCENA INTERWAŁÓW
 - Długość piku: odczytaj z interval_peaks_kv (np. [4,4,3,4] = trzy piki po 4 min). NIE zgaduj długości — używaj danych.
 - S3 podczas opadania HR między interwałami = fizjologia, nie błąd.
 - Przerwy <123 BPM = poprawna regeneracja.
+WERYFIKACJA STRUKTURY INTERWAŁÓW:
+- Typowa długość piku: 3-5 min. Pik ≥6 min = PODEJRZANY — prawdopodobnie dwa interwały złączone przez zbyt krótką przerwę.
+- Gdy w interval_peaks_kv jest pik ≥6 min: NIE pisz "struktura zachowana". Napisz "pik Xmin — wymaga weryfikacji, możliwe złączenie dwóch powtórzeń".
+- Nie wyciągaj wniosków o tendencji max HR (np. regres) gdy nie wiadomo czy porównywane piki to pojedyncze powtórzenia czy złączone — różne typy wysiłku nie są porównywalne.
+- Brak per-second danych HR w cache = brak możliwości weryfikacji przerw = NIE możesz potwierdzić ani zaprzeczyć struktury. Opisz niepewność wprost.
 
 POLARYZACJA (tylko jazdy Wahoo, dane sekundowe z zones_kv)
 Cel: S1+S2 ≥ 80%, S3 ≤ 5%, S4+S5 ~5-8%
