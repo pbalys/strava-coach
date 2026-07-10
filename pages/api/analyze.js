@@ -288,6 +288,20 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
     hasLongS2 ? `długa S2 ✓ (${currWeekSessions.longS2.length}x)` : hasShortS2 ? `łatwa S2 ✓ (${currWeekSessions.shortS2.length}x, brak długiej)` : 'S2 ✗',
   ].join(', ');
 
+  // Detect long S2 in last 48h to prevent next_workout from doubling load
+  const now = Date.now();
+  const recentLongS2 = (weekActs || []).filter(a => {
+    if (a.device_name !== 'Wahoo ELEMNT BOLT') return false;
+    const dur = Math.round(a.moving_time / 60);
+    const avgHr = a.average_heartrate ? Math.round(a.average_heartrate) : 999;
+    const age = (now - new Date(a.start_date_local).getTime()) / 3600000;
+    return dur > 90 && avgHr < 138 && age < 48;
+  });
+  const longS2Last48h = recentLongS2.length > 0;
+  const longS2RecoveryNote = longS2Last48h && trainingLoad && trainingLoad.tsb < -25
+    ? `UWAGA: ${Math.round((now - new Date(recentLongS2[0].start_date_local).getTime())/3600000)}h temu była długa jazda S2 (${Math.round(recentLongS2[0].moving_time/60)} min). TSB=${trainingLoad.tsb}. next_workout NIE MOŻE być kolejną długą S2 — zaleć dzień wolny lub bardzo lekką S1 <60 min, HR <110.`
+    : '';
+
   const prevWeekSessions = classifyWahooActs(prevWeekActs);
   const prevWeekSessionSummary = [
     prevWeekSessions.intervals.length > 0 ? `interwały ✓ (${prevWeekSessions.intervals.length}x, max HR ${Math.max(...prevWeekSessions.intervals.map(a => a.max_heartrate||0))} BPM)` : 'interwały ✗',
@@ -347,10 +361,11 @@ ${weekNum > 2 ? `TYDZIEŃ ${weekNum-2} (${prev2WeekRangeStr}): ${JSON.stringify(
 
 ZASADY
 - Oceniaj wyłącznie minione dni. Nie krytykuj za brak sesji w dniu który jeszcze nie nastąpił.
-- next_workout musi być spójny z recommendations — zero sprzeczności.
+- next_workout musi być spójny z recommendations — zero sprzeczności. Jeśli rekomendacje mówią "odpoczynek" lub "ogranicz", next_workout nie może być długim treningiem.
 - Nie wspominaj o mocy ani watach.
 - Liczba zalecanych sesji = DOKŁADNIE "Pozostało do zrobienia" powyżej. Jeśli 1 sesja pozostała — zalecaj 1 sesję (nie 2).
 - Jeśli sesja typu X jest już zrobiona w bieżącym tygodniu — NIE pisz "zrób dziś X". Pisz tylko o tym co jeszcze nie zostało zrobione.
+${longS2RecoveryNote}
 
 Odpowiedz TYLKO JSON bez markdown:
 {"overall_score":<0-100>,"polarization_score":<0-100>,"plan_score":<0-100>,"recovery_score":<0-100>,"summary":"<2-3 zdania z numerem tygodnia>","polarization_assessment":"<ocena>","plan_assessment":"<ocena>","recovery_assessment":"<ocena z TSB i CTL>","key_issues":["<konkretny problem z liczbami>"],"recommendations":["<zal1>","<zal2>","<zal3>"],"next_workout":"<co konkretnie robić>","progress":"<bullet points:\n• Realizacja T${weekNum-1}: ${prevWeekScoreStr} — ${prevWeekSessionSummary}\n• Polaryzacja S1+S2: X% → Y% — komentarz\n• Interwały: X BPM / X pików → Y BPM / Y pików — komentarz\n• Długa jazda: X BPM / X km → Y BPM / Y km — komentarz\n• Wniosek: jedno zdanie>"}`;
