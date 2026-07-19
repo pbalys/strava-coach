@@ -26,20 +26,26 @@ function calcZonesFromStreams(hrData, timeData) {
 
 function countPeaks(hrData, timeData, threshold=156, minDurSec=60, graceSec=15) {
   let peaks = [], inPeak = false, peakStart = 0, belowSince = null;
+  let valleyMin = null, valleyHrs = []; // min HR in rest between peaks
   for (let i = 0; i < hrData.length; i++) {
     const t = timeData[i], hr = hrData[i];
     if (!inPeak) {
-      if (hr >= threshold) { inPeak = true; peakStart = t; belowSince = null; }
+      if (hr >= threshold) {
+        if (valleyMin !== null) valleyHrs.push(valleyMin);
+        valleyMin = null;
+        inPeak = true; peakStart = t; belowSince = null;
+      } else {
+        valleyMin = valleyMin === null ? hr : Math.min(valleyMin, hr);
+      }
     } else {
       if (hr >= threshold) {
-        belowSince = null; // back above threshold, reset grace
+        belowSince = null;
       } else {
         if (belowSince === null) belowSince = t;
         if (t - belowSince >= graceSec) {
-          // been below threshold long enough — end the peak
           const dur = belowSince - peakStart;
           if (dur >= minDurSec) peaks.push(Math.round(dur / 60));
-          inPeak = false; belowSince = null;
+          inPeak = false; belowSince = null; valleyMin = hr;
         }
       }
     }
@@ -49,7 +55,8 @@ function countPeaks(hrData, timeData, threshold=156, minDurSec=60, graceSec=15) 
     const dur = endT - peakStart;
     if (dur >= minDurSec) peaks.push(Math.round(dur / 60));
   }
-  return peaks;
+  // valleyHrs: min HR in each rest period between consecutive peaks
+  return { peaks, valleyHrs };
 }
 
 async function getStravaToken() {
@@ -114,7 +121,7 @@ export default async function handler(req, res) {
         const hrData = streams.heartrate.data;
         const timeData = streams.time.data;
         const { counts, total } = calcZonesFromStreams(hrData, timeData);
-        const peaks = countPeaks(hrData, timeData);
+        const { peaks, valleyHrs } = countPeaks(hrData, timeData);
 
         const zones = {};
         ZONES.forEach(z => {
@@ -132,6 +139,7 @@ export default async function handler(req, res) {
           zones,
           total_seconds: Math.round(total),
           interval_peaks: peaks,
+          interval_valleys: valleyHrs,
           interval_count: peaks.length,
           avg_hr: detail.average_heartrate ? Math.round(detail.average_heartrate) : null,
           max_hr: detail.max_heartrate ? Math.round(detail.max_heartrate) : null,

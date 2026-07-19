@@ -210,6 +210,7 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
       ...(kvZones[a.id] ? {
         zones_kv: kvZones[a.id].zones,
         interval_peaks_kv: kvZones[a.id].interval_peaks,
+        interval_valleys_kv: kvZones[a.id].interval_valleys,
         interval_count_kv: kvZones[a.id].interval_count,
       } : {})
     };
@@ -267,6 +268,7 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
       const dur = Math.round(a.moving_time/60);
       const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : 0;
       const avgHr = a.average_heartrate ? Math.round(a.average_heartrate) : 999;
+      // S1 rides (avgHr <105) count if duration >60 min — in polarized training S1 is valid aerobic work
       return !(dur < 120 && maxHr > 156) && avgHr < 138 && dur >= 60;
     });
     const longS2 = s2rides.filter(a => Math.round(a.moving_time/60) > 90);
@@ -329,6 +331,7 @@ PLAN TYGODNIOWY (oceniaj po typie sesji, NIE po dniu tygodnia — każdy dzień 
 - ŁATWA S2: jazda Wahoo, avg HR <138, 60-120 min (jazda >90 min też się liczy jako łatwa S2 jeśli HR w normie)
 - DŁUGA S2: jazda Wahoo, avg HR <138, >90 min
 Uwaga: jedna jazda może pełnić rolę łatwej S2 LUB długiej S2 — nie wymagaj obu osobno jeśli są tylko 2 jazdy Wahoo w tygodniu.
+WAŻNE: jazda z avg HR <105 (strefa S1) też się zalicza jako łatwa S2 jeśli czas >60 min. W treningu spolaryzowanym S1 to poprawna praca aerobowa — NIE odrzucaj takiej jazdy jako "nieważnej" tylko dlatego że tętno było bardzo niskie.
 Realizacja: policz ile różnych typów sesji było (interwały / S2 krótka / S2 długa). Jeśli TSB < -25: pominięte sesje nie są błędem.
 
 OCENA INTERWAŁÓW
@@ -341,9 +344,11 @@ OCENA INTERWAŁÓW
 - Przerwy <123 BPM = poprawna regeneracja.
 WERYFIKACJA STRUKTURY INTERWAŁÓW:
 - Typowa długość piku: 3-5 min. Pik ≥6 min = PODEJRZANY — prawdopodobnie dwa interwały złączone przez zbyt krótką przerwę.
-- Gdy w interval_peaks_kv jest pik ≥6 min: NIE pisz "struktura zachowana". Napisz "pik Xmin — wymaga weryfikacji, możliwe złączenie dwóch powtórzeń".
-- Nie wyciągaj wniosków o tendencji max HR (np. regres) gdy nie wiadomo czy porównywane piki to pojedyncze powtórzenia czy złączone — różne typy wysiłku nie są porównywalne.
-- Brak per-second danych HR w cache = brak możliwości weryfikacji przerw = NIE możesz potwierdzić ani zaprzeczyć struktury. Opisz niepewność wprost.
+- interval_valleys_kv: lista minimalnych HR w przerwach między pikami (np. [118, 121] = dwie przerwy). Jeśli dostępne: użyj do weryfikacji czy przerwy były poprawne (<123 BPM).
+- Gdy w interval_peaks_kv jest pik ≥6 min I brak interval_valleys_kv: NIE pisz "struktura zachowana". Napisz "pik Xmin — wymaga weryfikacji, możliwe złączenie dwóch powtórzeń".
+- Gdy w interval_peaks_kv jest pik ≥6 min I interval_valleys_kv dostępne: sprawdź czy HR w przerwie spadło <123 BPM. Jeśli tak — przerwa była poprawna, pik mógł być jednym długim wysiłkiem. Jeśli nie — złączone interwały, zgłoś jako błąd struktury.
+- Nie wyciągaj wniosków o tendencji max HR (np. regres) gdy nie wiadomo czy porównywane piki to pojedyncze powtórzenia czy złączone.
+- Brak interval_valleys_kv = brak możliwości weryfikacji przerw = opisz niepewność wprost.
 
 POLARYZACJA (tylko jazdy Wahoo, dane sekundowe z zones_kv)
 Cel: S1+S2 ≥ 80%, S3 ≤ 5%, S4+S5 ~5-8%
