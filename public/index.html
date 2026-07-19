@@ -221,14 +221,15 @@ function calcZones(acts) {
   return {counts,total};
 }
 
-function getWeekMonday(){
-  const now=new Date(),mon=new Date(now);
-  mon.setDate(now.getDate()-((now.getDay()+6)%7));mon.setHours(0,0,0,0);
-  return mon;
+function getPlanWeekStart(){
+  const PLAN_START=new Date('2026-05-25T00:00:00');
+  const daysSince=Math.floor((Date.now()-PLAN_START)/(24*3600*1000));
+  const weekOffset=Math.floor(daysSince/7)*7;
+  return new Date(PLAN_START.getTime()+weekOffset*24*3600*1000);
 }
 function getWeekActs(acts){
-  const mon=getWeekMonday();
-  return acts.filter(a=>new Date(a.start_date_local)>=mon);
+  const weekStart=getPlanWeekStart();
+  return acts.filter(a=>new Date(a.start_date_local)>=weekStart);
 }
 function getLast7Acts(acts){
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-7);cutoff.setHours(0,0,0,0);
@@ -241,7 +242,7 @@ function last7RangeStr(){
   return `${d(from.getDate())}.${d(from.getMonth()+1)}–${d(to.getDate())}.${d(to.getMonth()+1)}`;
 }
 function weekRangeStr(){
-  const mon=getWeekMonday();
+  const mon=getPlanWeekStart();
   const sun=new Date(mon);sun.setDate(mon.getDate()+6);
   const d=n=>n<10?'0'+n:n;
   return `${d(mon.getDate())}.${d(mon.getMonth()+1)}–${d(sun.getDate())}.${d(sun.getMonth()+1)}`;
