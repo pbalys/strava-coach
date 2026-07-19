@@ -277,17 +277,19 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
   }
   const currWeekSessions = classifyWahooActs(weekActs || []);
   const hasIntervals = currWeekSessions.intervals.length > 0;
+  const allS2 = [...currWeekSessions.longS2, ...currWeekSessions.shortS2];
+  const s2Count = Math.min(allS2.length, 2); // max 2 S2 sessions count toward goal
   const hasLongS2 = currWeekSessions.longS2.length > 0;
-  const hasShortS2 = currWeekSessions.shortS2.length > 0;
-  const currWeekScore = (hasIntervals ? 1 : 0) + (hasShortS2 ? 1 : 0) + (hasLongS2 ? 1 : 0);
+  const currWeekScore = (hasIntervals ? 1 : 0) + s2Count;
   const currWeekRemaining = Math.max(0, 3 - currWeekScore);
   const missingTypes = [];
   if (!hasIntervals) missingTypes.push('interwały (Wahoo, max HR >156, <2h)');
-  if (!hasLongS2) missingTypes.push('długa S2 (Wahoo, avg HR <138, >90 min)');
-  else if (!hasShortS2) missingTypes.push('łatwa S2 (Wahoo, avg HR <138, 60-90 min)');
+  if (s2Count === 0) missingTypes.push('2x jazda S2 (Wahoo, avg HR <138, ≥60 min)');
+  else if (s2Count === 1) missingTypes.push('jeszcze 1x jazda S2 (Wahoo, avg HR <138, ≥60 min)');
+  const s2Label = s2Count >= 2 ? `S2 ✓ (${allS2.length}x — ${hasLongS2 ? 'w tym długa' : 'krótkie'})` : s2Count === 1 ? `S2 ✓ (1x, brak drugiej)` : 'S2 ✗';
   const currWeekSessionSummary = [
     hasIntervals ? `interwały ✓ (${currWeekSessions.intervals.length}x)` : 'interwały ✗',
-    hasLongS2 ? `długa S2 ✓ (${currWeekSessions.longS2.length}x)` : hasShortS2 ? `łatwa S2 ✓ (${currWeekSessions.shortS2.length}x, brak długiej)` : 'S2 ✗',
+    s2Label,
   ].join(', ');
 
   // Detect long S2 in last 48h to prevent next_workout from doubling load
@@ -305,11 +307,14 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
     : '';
 
   const prevWeekSessions = classifyWahooActs(prevWeekActs);
+  const prevAllS2 = [...prevWeekSessions.longS2, ...prevWeekSessions.shortS2];
+  const prevS2Count = Math.min(prevAllS2.length, 2);
+  const prevWeekScore = (prevWeekSessions.intervals.length > 0 ? 1 : 0) + prevS2Count;
+  const prevS2Label = prevS2Count >= 2 ? `S2 ✓ (${prevAllS2.length}x)` : prevS2Count === 1 ? 'S2 ✓ (1x, brak drugiej)' : 'S2 ✗';
   const prevWeekSessionSummary = [
     prevWeekSessions.intervals.length > 0 ? `interwały ✓ (${prevWeekSessions.intervals.length}x, max HR ${Math.max(...prevWeekSessions.intervals.map(a => a.max_heartrate||0))} BPM)` : 'interwały ✗',
-    prevWeekSessions.longS2.length > 0 ? `długa S2 ✓ (${prevWeekSessions.longS2.length}x)` : prevWeekSessions.shortS2.length > 0 ? `łatwa S2 ✓ (${prevWeekSessions.shortS2.length}x, brak długiej)` : 'S2 ✗',
+    prevS2Label,
   ].join(', ');
-  const prevWeekScore = (prevWeekSessions.intervals.length > 0 ? 1 : 0) + (prevWeekSessions.shortS2.length > 0 ? 1 : 0) + (prevWeekSessions.longS2.length > 0 ? 1 : 0);
   const prevWeekScoreStr = `${Math.min(prevWeekScore, 3)}/3 sesji`;
 
   const restingHRLine = restingHR && restingHR.some(d => d.resting_hr)
@@ -327,11 +332,11 @@ SPRZĘT
 STREFY HR: S1 <104, S2 105-138, S3 139-155, S4 156-172, S5 >173
 
 PLAN TYGODNIOWY (oceniaj po typie sesji, NIE po dniu tygodnia — każdy dzień tygodnia jest OK)
+Cel: 3 sesje = 1x interwały + 2x jazda S2 (dowolnej długości ≥60 min, avg HR <138)
 - INTERWAŁY: jazda Wahoo, max HR >156, czas <2h
-- ŁATWA S2: jazda Wahoo, avg HR <138, 60-120 min (jazda >90 min też się liczy jako łatwa S2 jeśli HR w normie)
-- DŁUGA S2: jazda Wahoo, avg HR <138, >90 min
-Uwaga: jedna jazda może pełnić rolę łatwej S2 LUB długiej S2 — nie wymagaj obu osobno jeśli są tylko 2 jazdy Wahoo w tygodniu.
-WAŻNE: jazda z avg HR <105 (strefa S1) też się zalicza jako łatwa S2 jeśli czas >60 min. W treningu spolaryzowanym S1 to poprawna praca aerobowa — NIE odrzucaj takiej jazdy jako "nieważnej" tylko dlatego że tętno było bardzo niskie.
+- JAZDA S2: jazda Wahoo, avg HR <138, ≥60 min — krótka (60-90 min) lub długa (>90 min) — obie się liczą tak samo
+Uwaga: dwie długie jazdy S2 w tygodniu = 2/2 S2 zaliczone = plan 3/3 jeśli były też interwały.
+WAŻNE: jazda z avg HR <105 (strefa S1) też się zalicza jeśli czas >60 min. S1 to poprawna praca aerobowa — NIE odrzucaj jej tylko dlatego że tętno było bardzo niskie.
 Realizacja: policz ile różnych typów sesji było (interwały / S2 krótka / S2 długa). Jeśli TSB < -25: pominięte sesje nie są błędem.
 
 OCENA INTERWAŁÓW
