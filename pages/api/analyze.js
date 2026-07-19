@@ -344,9 +344,12 @@ OCENA INTERWAŁÓW
 - Przerwy <123 BPM = poprawna regeneracja.
 WERYFIKACJA STRUKTURY INTERWAŁÓW:
 - Typowa długość piku: 3-5 min. Pik ≥6 min = PODEJRZANY — prawdopodobnie dwa interwały złączone przez zbyt krótką przerwę.
-- interval_valleys_kv: lista minimalnych HR w przerwach między pikami (np. [118, 121] = dwie przerwy). Jeśli dostępne: użyj do weryfikacji czy przerwy były poprawne (<123 BPM).
+- interval_valleys_kv: lista przerw między pikami, każda jako {minHr, secBelow123}. minHr = najniższe HR w przerwie, secBelow123 = ile sekund HR było poniżej 123 BPM. Jeśli dostępne: użyj do oceny jakości regeneracji.
+- Przerwa POPRAWNA: minHr <123 BPM ORAZ secBelow123 ≥30s (tzn. nie tylko chwilowy spadek, ale faktyczna regeneracja).
+- Przerwa ZA KRÓTKA: minHr <123 ale secBelow123 <30s — HR spadło na chwilę, brak pełnej regeneracji.
+- Przerwa ZA WYSOKA: minHr ≥123 — HR nigdy nie spadło do poziomu regeneracji między interwałami.
 - Gdy w interval_peaks_kv jest pik ≥6 min I brak interval_valleys_kv: NIE pisz "struktura zachowana". Napisz "pik Xmin — wymaga weryfikacji, możliwe złączenie dwóch powtórzeń".
-- Gdy w interval_peaks_kv jest pik ≥6 min I interval_valleys_kv dostępne: sprawdź czy HR w przerwie spadło <123 BPM. Jeśli tak — przerwa była poprawna, pik mógł być jednym długim wysiłkiem. Jeśli nie — złączone interwały, zgłoś jako błąd struktury.
+- Gdy w interval_peaks_kv jest pik ≥6 min I interval_valleys_kv dostępne: sprawdź secBelow123 przerwy przed tym pikiem. Jeśli <30s — złączone interwały, zgłoś jako błąd struktury. Jeśli ≥30s — przerwa była OK, pik to prawdopodobnie jeden długi wysiłek.
 - Nie wyciągaj wniosków o tendencji max HR (np. regres) gdy nie wiadomo czy porównywane piki to pojedyncze powtórzenia czy złączone.
 - Brak interval_valleys_kv = brak możliwości weryfikacji przerw = opisz niepewność wprost.
 

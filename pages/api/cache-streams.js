@@ -24,18 +24,30 @@ function calcZonesFromStreams(hrData, timeData) {
   return { counts, total };
 }
 
+const RECOVERY_HR = 123;
+
 function countPeaks(hrData, timeData, threshold=156, minDurSec=60, graceSec=15) {
   let peaks = [], inPeak = false, peakStart = 0, belowSince = null;
-  let valleyMin = null, valleyHrs = []; // min HR in rest between peaks
+  let valleys = []; // {minHr, secBelow123} per rest between peaks
+  let valleyMin = null, valleyRecovStart = null, valleyRecovSec = 0;
+
+  const flushValley = () => {
+    if (valleyMin !== null) {
+      valleys.push({ minHr: valleyMin, secBelow123: Math.round(valleyRecovSec) });
+    }
+    valleyMin = null; valleyRecovStart = null; valleyRecovSec = 0;
+  };
+
   for (let i = 0; i < hrData.length; i++) {
     const t = timeData[i], hr = hrData[i];
+    const dt = i > 0 ? Math.min(t - timeData[i-1], 10) : 0; // cap gap at 10s
     if (!inPeak) {
       if (hr >= threshold) {
-        if (valleyMin !== null) valleyHrs.push(valleyMin);
-        valleyMin = null;
+        flushValley();
         inPeak = true; peakStart = t; belowSince = null;
       } else {
         valleyMin = valleyMin === null ? hr : Math.min(valleyMin, hr);
+        if (hr < RECOVERY_HR) valleyRecovSec += dt;
       }
     } else {
       if (hr >= threshold) {
@@ -45,7 +57,8 @@ function countPeaks(hrData, timeData, threshold=156, minDurSec=60, graceSec=15) 
         if (t - belowSince >= graceSec) {
           const dur = belowSince - peakStart;
           if (dur >= minDurSec) peaks.push(Math.round(dur / 60));
-          inPeak = false; belowSince = null; valleyMin = hr;
+          inPeak = false; belowSince = null;
+          valleyMin = hr; valleyRecovSec = hr < RECOVERY_HR ? dt : 0; valleyRecovStart = t;
         }
       }
     }
@@ -55,8 +68,8 @@ function countPeaks(hrData, timeData, threshold=156, minDurSec=60, graceSec=15) 
     const dur = endT - peakStart;
     if (dur >= minDurSec) peaks.push(Math.round(dur / 60));
   }
-  // valleyHrs: min HR in each rest period between consecutive peaks
-  return { peaks, valleyHrs };
+  // valleys[i] = rest between peaks[i] and peaks[i+1]
+  return { peaks, valleys };
 }
 
 async function getStravaToken() {
@@ -121,7 +134,7 @@ export default async function handler(req, res) {
         const hrData = streams.heartrate.data;
         const timeData = streams.time.data;
         const { counts, total } = calcZonesFromStreams(hrData, timeData);
-        const { peaks, valleyHrs } = countPeaks(hrData, timeData);
+        const { peaks, valleys } = countPeaks(hrData, timeData);
 
         const zones = {};
         ZONES.forEach(z => {
@@ -139,7 +152,7 @@ export default async function handler(req, res) {
           zones,
           total_seconds: Math.round(total),
           interval_peaks: peaks,
-          interval_valleys: valleyHrs,
+          interval_valleys: valleys,
           interval_count: peaks.length,
           avg_hr: detail.average_heartrate ? Math.round(detail.average_heartrate) : null,
           max_hr: detail.max_heartrate ? Math.round(detail.max_heartrate) : null,
