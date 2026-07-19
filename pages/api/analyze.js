@@ -156,10 +156,11 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
 
   // Fetch previous week (7–14 days ago) Wahoo zone data from KV for comparison
   let prevWeekZonePcts = null;
-  const PLAN_START = new Date('2026-05-25T00:00:00');
-  const daysSincePlanStart = Math.floor((Date.now() - PLAN_START) / (24*3600*1000));
+  // Weeks run Mon–Sun; plan starts 2026-05-26 (first Monday on/after May 25)
+  const PLAN_MONDAY = new Date('2026-05-26T00:00:00');
+  const daysSincePlanStart = Math.floor((Date.now() - PLAN_MONDAY) / (24*3600*1000));
   const currentWeekNum = Math.floor(daysSincePlanStart / 7) + 1;
-  const currentWeekStart = new Date(PLAN_START.getTime() + Math.floor(daysSincePlanStart / 7) * 7 * 24*3600*1000);
+  const currentWeekStart = new Date(PLAN_MONDAY.getTime() + Math.floor(daysSincePlanStart / 7) * 7 * 24*3600*1000);
   const prevWeekStart = new Date(currentWeekStart.getTime() - 7*24*3600*1000);
 
   if (redis && activities && activities.length) {

@@ -222,10 +222,11 @@ function calcZones(acts) {
 }
 
 function getPlanWeekStart(){
-  const PLAN_START=new Date('2026-05-25T00:00:00');
-  const daysSince=Math.floor((Date.now()-PLAN_START)/(24*3600*1000));
-  const weekOffset=Math.floor(daysSince/7)*7;
-  return new Date(PLAN_START.getTime()+weekOffset*24*3600*1000);
+  // Weeks run Mon–Sun; plan starts 2026-05-26 (first Monday on/after May 25)
+  const PLAN_MONDAY=new Date('2026-05-26T00:00:00');
+  const daysSince=Math.floor((Date.now()-PLAN_MONDAY)/(24*3600*1000));
+  const weekOffset=Math.max(0,Math.floor(daysSince/7))*7;
+  return new Date(PLAN_MONDAY.getTime()+weekOffset*24*3600*1000);
 }
 function getWeekActs(acts){
   const weekStart=getPlanWeekStart();
