@@ -106,7 +106,7 @@ export default async function handler(req, res) {
     }
 
     const DAY_PL_SA = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
-    const dayName = DAY_PL_SA[new Date(a.start_date_local).getDay()];
+    const dayName = DAY_PL_SA[new Date(actDate(a) + 'T00:00:00Z').getUTCDay()];
     const durationMin = Math.round(a.moving_time/60);
     const maxHr = a.max_heartrate ? Math.round(a.max_heartrate) : null;
     const isInterval = durationMin < 90 && maxHr && maxHr > 156;
@@ -157,17 +157,32 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
   // Fetch previous week (7–14 days ago) Wahoo zone data from KV for comparison
   let prevWeekZonePcts = null;
   // Weeks run Mon–Sun; plan starts 2026-05-26 (first Monday on/after May 25)
-  const PLAN_MONDAY = new Date('2026-05-26T00:00:00');
-  const daysSincePlanStart = Math.floor((Date.now() - PLAN_MONDAY) / (24*3600*1000));
+  // All date arithmetic uses YYYY-MM-DD strings to avoid timezone issues with start_date_local
+  const addDays = (dateStr, n) => {
+    const d = new Date(dateStr + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  const todayStr = new Date().toISOString().slice(0, 10); // UTC date, stable on Vercel
+  const PLAN_MONDAY_STR = '2026-05-26';
+  const msPerDay = 24 * 3600 * 1000;
+  const daysSincePlanStart = Math.floor((new Date(todayStr + 'T00:00:00Z') - new Date(PLAN_MONDAY_STR + 'T00:00:00Z')) / msPerDay);
   const currentWeekNum = Math.floor(daysSincePlanStart / 7) + 1;
-  const currentWeekStart = new Date(PLAN_MONDAY.getTime() + Math.floor(daysSincePlanStart / 7) * 7 * 24*3600*1000);
-  const prevWeekStart = new Date(currentWeekStart.getTime() - 7*24*3600*1000);
+  const currentWeekStartStr = addDays(PLAN_MONDAY_STR, Math.floor(daysSincePlanStart / 7) * 7);
+  const currentWeekEndStr = addDays(currentWeekStartStr, 7); // exclusive
+  const prevWeekStartStr = addDays(currentWeekStartStr, -7);
+  const prev2WeekStartStr = addDays(currentWeekStartStr, -14);
+
+  // Helper: get YYYY-MM-DD from start_date_local (first 10 chars, always safe)
+  const actDate = a => a.start_date_local.slice(0, 10);
+  const inWeek = (a, startStr, endStr) => actDate(a) >= startStr && actDate(a) < endStr;
+
+  // Keep Date objects only where needed for display formatting
+  const currentWeekStart = new Date(currentWeekStartStr + 'T00:00:00Z');
+  const prevWeekStart = new Date(prevWeekStartStr + 'T00:00:00Z');
 
   if (redis && activities && activities.length) {
-    const prevActs = activities.filter(a => {
-      const d = new Date(a.start_date_local);
-      return d >= prevWeekStart && d < currentWeekStart;
-    });
+    const prevActs = activities.filter(a => inWeek(a, prevWeekStartStr, currentWeekStartStr));
     if (prevActs.length) {
       try {
         const prevKv = {};
@@ -199,7 +214,7 @@ WAŻNE: Czas w S3 podczas przerw między interwałami NIE jest błędem - to nat
     return {
       name: a.name, type: a.type,
       date: a.start_date_local,
-      day: DAY_PL[new Date(a.start_date_local).getDay()],
+      day: DAY_PL[new Date(actDate(a) + 'T00:00:00Z').getUTCDay()],
       duration_min: durMin,
       distance_km: a.distance > 0 ? (a.distance/1000).toFixed(1) : '0',
       // avg_hr excluded for interval sessions — misleadingly low due to recovery intervals
@@ -240,22 +255,14 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
   const weekNum = currentWeekNum;
 
   const fmtDate = d => d.toISOString().slice(0,10);
-  const currentWeekEnd = new Date(currentWeekStart.getTime() + 7*24*3600*1000);
-  const weekRangeStr = `${fmtDate(currentWeekStart)} – ${fmtDate(new Date(currentWeekEnd.getTime()-1))}`;
-  const prevWeekEnd = currentWeekStart;
-  const prevWeekRangeStr = `${fmtDate(prevWeekStart)} – ${fmtDate(new Date(prevWeekEnd.getTime()-1))}`;
+  const weekRangeStr = `${currentWeekStartStr} – ${addDays(currentWeekEndStr, -1)}`;
+  const prevWeekRangeStr = `${prevWeekStartStr} – ${addDays(currentWeekStartStr, -1)}`;
+  const prev2WeekRangeStr = `${prev2WeekStartStr} – ${addDays(prevWeekStartStr, -1)}`;
 
-  const prevWeekActs = (activities || []).filter(a => {
-    const d = new Date(a.start_date_local);
-    return d >= prevWeekStart && d < currentWeekStart;
-  });
-
-  const prev2WeekStart = new Date(prevWeekStart.getTime() - 7*24*3600*1000);
-  const prev2WeekRangeStr = `${fmtDate(prev2WeekStart)} – ${fmtDate(new Date(prevWeekStart.getTime()-1))}`;
-  const prev2WeekActs = weekNum > 2 ? (activities || []).filter(a => {
-    const d = new Date(a.start_date_local);
-    return d >= prev2WeekStart && d < prevWeekStart;
-  }) : [];
+  const prevWeekActs = (activities || []).filter(a => inWeek(a, prevWeekStartStr, currentWeekStartStr));
+  const prev2WeekActs = weekNum > 2
+    ? (activities || []).filter(a => inWeek(a, prev2WeekStartStr, prevWeekStartStr))
+    : [];
 
   // Count previous week sessions in code — don't rely on Claude to count
   function classifyWahooActs(acts) {
@@ -299,7 +306,8 @@ ZASADY TSB: NIE używaj słowa "przeciążony" gdy TSB > -30. Przy TSB -26 pisz 
     if (a.device_name !== 'Wahoo ELEMNT BOLT') return false;
     const dur = Math.round(a.moving_time / 60);
     const avgHr = a.average_heartrate ? Math.round(a.average_heartrate) : 999;
-    const age = (now - new Date(a.start_date_local).getTime()) / 3600000;
+    const actMs = new Date(actDate(a) + 'T00:00:00Z').getTime();
+    const age = (now - actMs) / 3600000;
     return dur > 90 && avgHr < 138 && age < 48;
   });
   const longS2Last48h = recentLongS2.length > 0;
