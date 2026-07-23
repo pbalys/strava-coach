@@ -205,7 +205,11 @@ async function apiFetch(path, body) {
 
 function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h ${m}m`:`${m}min`;}
 function fmtD(m){return (m/1000).toFixed(1)+' km';}
-function fmtDate(s){return new Date(s).toLocaleDateString('pl-PL',{day:'numeric',month:'short'});}
+function fmtDate(s){
+  // Parse date from start_date_local string directly to avoid timezone shifts
+  const [y,mo,d]=s.slice(0,10).split('-').map(Number);
+  return new Date(y,mo-1,d).toLocaleDateString('pl-PL',{day:'numeric',month:'short'});
+}
 function ico(t){return {Ride:'🚴',VirtualRide:'🖥️',Run:'🏃',Walk:'🚶',Swim:'🏊',Hike:'🥾',WeightTraining:'🏋️',Workout:'💪',Snowboard:'🏂'}[t]||'🏅';}
 
 function zoneForHR(hr) {
