@@ -366,9 +366,10 @@ ${prevZonesLine ? prevZonesLine : ''}
 OBCIĄŻENIE: ${trainingLoad ? `CTL=${trainingLoad.ctl}, ATL=${trainingLoad.atl}, TSB=${trainingLoad.tsb>0?'+':''}${trainingLoad.tsb}. ${tsbComment}` : 'brak danych.'}
 Progi TSB: >-15 optymalna | -15/-25 zmęczony | -25/-35 ogranicz intensywność S2 dozwolone | <-35 odpoczynek. Nie używaj "przeciążony" przy TSB >-30.
 ${restingHRLine ? restingHRLine+'\n' : ''}
-REALIZACJA T${weekNum} BIEŻĄCY TYDZIEŃ (WYLICZONA W KODZIE — używaj tej liczby, nie licz sam):
+REALIZACJA T${weekNum} BIEŻĄCY TYDZIEŃ (WYLICZONA W KODZIE — używaj tej liczby, NIE licz sam, NIE dziel jednej aktywności na dwie sesje):
 ${currWeekScore}/3 sesji zrobionych: ${currWeekSessionSummary}
 Pozostało do zrobienia: ${currWeekRemaining} sesja(e). Brakujące typy: ${missingTypes.length > 0 ? missingTypes.join(' + ') : 'brak — plan tygodnia zrealizowany'}. Zalecaj DOKŁADNIE te typy sesji — nie więcej, nie mniej.
+UWAGA: 1 aktywność = 1 sesja, niezależnie od długości. Jazda 3h44m = 1 sesja S2, nie dwie.
 
 REALIZACJA T${weekNum-1} (WYLICZONA W KODZIE — używaj tej liczby, nie licz sam):
 ${prevWeekScoreStr}: ${prevWeekSessionSummary}
