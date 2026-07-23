@@ -225,16 +225,18 @@ function calcZones(acts) {
   return {counts,total};
 }
 
-function getPlanWeekStart(){
-  // Weeks run Mon–Sun; plan starts 2026-05-26 (first Monday on/after May 25)
-  const PLAN_MONDAY=new Date('2026-05-26T00:00:00');
-  const daysSince=Math.floor((Date.now()-PLAN_MONDAY)/(24*3600*1000));
+function getPlanWeekStartStr(){
+  // All date math in UTC to avoid timezone issues; compare YYYY-MM-DD strings
+  const PLAN_MONDAY='2026-05-26';
+  const msPerDay=24*3600*1000;
+  const daysSince=Math.floor((Date.now()-new Date(PLAN_MONDAY+'T00:00:00Z'))/ msPerDay);
   const weekOffset=Math.max(0,Math.floor(daysSince/7))*7;
-  return new Date(PLAN_MONDAY.getTime()+weekOffset*24*3600*1000);
+  const d=new Date(new Date(PLAN_MONDAY+'T00:00:00Z').getTime()+weekOffset*msPerDay);
+  return d.toISOString().slice(0,10);
 }
 function getWeekActs(acts){
-  const weekStart=getPlanWeekStart();
-  return acts.filter(a=>new Date(a.start_date_local)>=weekStart);
+  const weekStartStr=getPlanWeekStartStr();
+  return acts.filter(a=>a.start_date_local.slice(0,10)>=weekStartStr);
 }
 function getLast7Acts(acts){
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-7);cutoff.setHours(0,0,0,0);
@@ -247,8 +249,9 @@ function last7RangeStr(){
   return `${d(from.getDate())}.${d(from.getMonth()+1)}–${d(to.getDate())}.${d(to.getMonth()+1)}`;
 }
 function weekRangeStr(){
-  const mon=getPlanWeekStart();
-  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  const monStr=getPlanWeekStartStr();
+  const mon=new Date(monStr+'T00:00:00Z');
+  const sun=new Date(mon);sun.setUTCDate(mon.getUTCDate()+6);
   const d=n=>n<10?'0'+n:n;
   return `${d(mon.getDate())}.${d(mon.getMonth()+1)}–${d(sun.getDate())}.${d(sun.getMonth()+1)}`;
 }
