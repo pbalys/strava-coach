@@ -918,7 +918,7 @@ async function init(){
     const weekZonePcts=accZones?(()=>{const o={};ZONES.forEach(z=>{o['S'+z.n]={pct:Math.round(accZones.counts[z.n]/accZones.total*100),mins:Math.round(accZones.counts[z.n]/60)};});return o;})():null;
     // Enrich weekActs with per-activity interval peak data from stream cache
     const perAct=accZones?.perActivity||{};
-    const enrichedWeekActs=last7Acts.map(a=>{
+    const enrichedWeekActs=weekActs.map(a=>{
       const p=perAct[a.id];
       const extra={};
       if(p?.peaks?.length){extra.interval_peaks=p.peaks;extra.interval_count=p.peaks.length;}
